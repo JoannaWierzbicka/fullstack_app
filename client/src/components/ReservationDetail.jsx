@@ -1,98 +1,98 @@
 import { useLoaderData, useNavigate, Link } from 'react-router-dom';
 import { useState } from 'react';
-import { FaSave, FaTrashAlt, FaTimes } from 'react-icons/fa';
-import { updateReservation, deleteReservation } from '../api/reservations';
-import './ReservationDetail.css';
+import { deleteReservation } from '../api/reservations';
+import {
+  Paper,
+  Typography,
+  Box,
+  Stack,
+  Button,
+  Divider,
+  Container
+} from '@mui/material';
+import { FaTrashAlt, FaArrowLeft } from 'react-icons/fa';
 
 function ReservationDetail() {
   const reservation = useLoaderData();
   const navigate = useNavigate();
-  
-  const [formData, setFormData] = useState({
-    name: reservation.name,
-    lastname: reservation.lastname,
-    phone: reservation.phone,
-    mail: reservation.mail,
-    start_date: reservation.start_date,
-    end_date: reservation.end_date,
-    room: reservation.room,
-    price: reservation.price
-  });
-  
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState(null);
-  
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-  
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setError(null);
-    
-    try {
-      await updateReservation(reservation.id, formData);
-      navigate('/');
-    } catch (err) {
-      setError(err.message || 'Failed to save.');
-      setIsSubmitting(false);
-    }
-  };
-  
+
   const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this reservation?')) {
-      setIsSubmitting(true);
+      setIsDeleting(true);
       try {
         await deleteReservation(reservation.id);
         navigate('/');
       } catch (err) {
         setError(err.message || 'Failed to delete.');
-        setIsSubmitting(false);
+        setIsDeleting(false);
       }
     }
   };
-  
+
   return (
-    <div className="reservation-detail-container">
-      <h2>Edit Reservation</h2>
-      {error && <div className="error-message">{error}</div>}
-      <form onSubmit={handleSubmit} className="reservation-form">
-        {['name','lastname','phone','mail','start_date','end_date','room','price'].map(field => (
-          <div key={field} className="form-group">
-            <label htmlFor={field}>{field.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</label>
-            <input
-              type={field.includes('date') ? 'date' : 'text'}
-              id={field}
-              name={field}
-              value={formData[field]}
-              onChange={handleChange}
-              required
-            />
-          </div>
-        ))}
-        <div className="form-actions">
-          <button type="submit" disabled={isSubmitting} className="primary">
-            <FaSave /> {isSubmitting ? 'Saving...' : 'Save Changes'}
-          </button>
-          <Link to="/" className="button secondary">
-            <FaTimes /> Cancel
-          </Link>
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={isSubmitting}
-            className="danger"
+    <Container maxWidth="sm" sx={{ mt: 4 }}>
+      <Paper elevation={3} sx={{ p: 3 }}>
+        <Typography variant="h5" gutterBottom>
+          Reservation Details
+        </Typography>
+
+        {error && (
+          <Typography color="error" variant="body2" gutterBottom>
+            {error}
+          </Typography>
+        )}
+
+        <Divider sx={{ my: 2 }} />
+
+        <Stack spacing={1}>
+          <DetailItem label="Name" value={`${reservation.name} ${reservation.lastname}`} />
+          <DetailItem label="Phone" value={reservation.phone} />
+          <DetailItem label="Email" value={reservation.mail} />
+          <DetailItem label="Room" value={reservation.room} />
+          <DetailItem label="Price" value={`$${reservation.price}`} />
+          <DetailItem label="From" value={reservation.start_date} />
+          <DetailItem label="To" value={reservation.end_date} />
+          <DetailItem label="Adults" value={reservation.adults} />
+          <DetailItem label="Children" value={reservation.children} />
+        </Stack>
+
+        <Divider sx={{ my: 3 }} />
+
+        <Stack direction="row" spacing={2} justifyContent="flex-end">
+          <Button
+            variant="outlined"
+            color="primary"
+            component={Link}
+            to="/"
+            startIcon={<FaArrowLeft />}
           >
-            <FaTrashAlt /> {isSubmitting ? 'Deleting...' : 'Delete'}
-          </button>
-        </div>
-      </form>
-    </div>
+            Back
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleDelete}
+            disabled={isDeleting}
+            startIcon={<FaTrashAlt />}
+          >
+            {isDeleting ? 'Deleting...' : 'Delete'}
+          </Button>
+        </Stack>
+      </Paper>
+    </Container>
+  );
+}
+
+function DetailItem({ label, value }) {
+  return (
+    <Box>
+      <Typography variant="subtitle2" color="textSecondary">
+        {label}
+      </Typography>
+      <Typography variant="body1">{value}</Typography>
+    </Box>
   );
 }
 

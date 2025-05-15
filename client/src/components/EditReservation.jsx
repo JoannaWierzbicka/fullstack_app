@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLoaderData } from 'react-router-dom';
 import {
   Dialog,
   DialogTitle,
@@ -13,27 +13,27 @@ import {
   Button,
   Box,
   Paper,
-  Stack,
   Typography
 } from '@mui/material';
 import { FaSave, FaTimes } from 'react-icons/fa';
-import { createReservation } from '../api/reservations';
+import { updateReservation } from '../api/reservations';
 
-function AddReservation() {
+function EditReservation() {
   const navigate = useNavigate();
-  const [open, setOpen] = useState(true);
+  const reservation = useLoaderData();
+  const [open] = useState(true);
 
   const [formData, setFormData] = useState({
-    name: '',
-    lastname: '',
-    phone: '',
-    mail: '',
-    start_date: '',
-    end_date: '',
-    room: '',
-    price: '',
-    adults: '',
-    children: '',
+    name: reservation.name || '',
+    lastname: reservation.lastname || '',
+    phone: reservation.phone || '',
+    mail: reservation.mail || '',
+    start_date: reservation.start_date || '',
+    end_date: reservation.end_date || '',
+    room: reservation.room || '',
+    price: reservation.price || '',
+    adults: reservation.adults || '',
+    children: reservation.children || '',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -57,17 +57,17 @@ function AddReservation() {
     setError(null);
 
     try {
-      await createReservation(formData);
+      await updateReservation(reservation.id, formData);
       navigate('/');
     } catch (err) {
-      setError(err.message || 'Failed to create reservation.');
+      setError(err.message || 'Failed to update reservation.');
       setIsSubmitting(false);
     }
   };
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Add New Reservation</DialogTitle>
+      <DialogTitle>Edit Reservation</DialogTitle>
       <DialogContent dividers>
         {error && (
           <Typography color="error" variant="body2" mb={2}>
@@ -208,7 +208,7 @@ function AddReservation() {
                 disabled={isSubmitting}
                 startIcon={<FaSave />}
               >
-                {isSubmitting ? 'Creating...' : 'Create'}
+                {isSubmitting ? 'Saving...' : 'Save Changes'}
               </Button>
             </DialogActions>
           </Box>
@@ -218,4 +218,4 @@ function AddReservation() {
   );
 }
 
-export default AddReservation;
+export default EditReservation;
