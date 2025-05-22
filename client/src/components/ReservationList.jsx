@@ -1,10 +1,11 @@
 import { useLoaderData, Link, useNavigate } from 'react-router-dom';
 import { useState, useMemo } from 'react';
 import {
-  Paper, Grid, Typography, Button, Card,
-  CardContent, CardActions, Container,
-  Select, MenuItem, FormControl, InputLabel, Box
+  Container, Typography, Button, Card,
+  CardContent, CardActions, Select, MenuItem,
+  FormControl, InputLabel, Box
 } from '@mui/material';
+import ReservationCard from './ReservationCard';
 
 function ReservationList() {
   const initialReservations = useLoaderData();
@@ -29,16 +30,21 @@ function ReservationList() {
         return sorted.sort((a, b) => Number(a.room) - Number(b.room));
       case 'date':
       default:
-        return sorted.sort(
-          (a, b) => new Date(a.start_date) - new Date(b.start_date)
-        );
+        return sorted.sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
     }
   }, [reservations, sortBy]);
 
   return (
-    <Container>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant='h5'>Reservations</Typography>
+    <Container maxWidth="lg">
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={3}
+        flexDirection={{ xs: 'column', sm: 'row' }}
+        gap={2}
+      >
+        <Typography variant="h5">Reservations</Typography>
         <FormControl size="small" sx={{ minWidth: 200 }}>
           <InputLabel>Sort By</InputLabel>
           <Select
@@ -46,79 +52,61 @@ function ReservationList() {
             label="Sort By"
             onChange={(e) => setSortBy(e.target.value)}
           >
-            <MenuItem value="date">Start Date (Nearest)</MenuItem>
-            <MenuItem value="lastname">Last Name (A–Z)</MenuItem>
-            <MenuItem value="room">Room Number</MenuItem>
+            <MenuItem value="date">Start Date</MenuItem>
+            <MenuItem value="lastname">Last Name</MenuItem>
+            <MenuItem value="room">Apartment</MenuItem>
           </Select>
         </FormControl>
       </Box>
-        {sortedReservations.length === 0 ? (
-          <Card>
-            <CardContent>
-              <Typography>No reservations found.</Typography>
-            </CardContent>
-            <CardActions>
-              <Button
-                component={Link}
-                to="/add"
-                variant="contained"
-                color="secondary"
-                sx={{
-                  '&.active': {
-                    backgroundColor: 'secondary.main',
-                    color: 'white',
-                  },
-                }}
-              >
-                Add First Reservation
-              </Button>
-            </CardActions>
-          </Card>
-        ) : (
-          <Grid container spacing={2} justifyContent="center">
-            {sortedReservations.map(reservation => (
-              <Grid item xs={12} sm={6} md={3} key={reservation.id}>
-                <Card
-                  className="reservation-item"
-                  onClick={() => navigate(`/detail/${reservation.id}`)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <CardContent className="reservation-details">
-                    <Typography variant="h6">
-                      {reservation.name} {reservation.lastname}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Room: {reservation.room}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      From: {reservation.start_date} To: {reservation.end_date}
-                    </Typography>
-                  </CardContent>
-                  <CardActions onClick={(e) => e.stopPropagation()}>
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/edit/${reservation.id}`);
-                      }}
-                      variant="contained"
-                      color="secondary"
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      onClick={(e) => handleDelete(e, reservation.id)}
-                      variant="contained"
-                      color="secondary"
-                    >
-                      Delete
-                    </Button>
-                  </CardActions>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        )}
-   
+
+      {sortedReservations.length === 0 ? (
+        <Card>
+          <CardContent>
+            <Typography>No reservations found.</Typography>
+          </CardContent>
+          <CardActions>
+            <Button
+              component={Link}
+              to="/add"
+              variant="contained"
+              color="secondary"
+            >
+              Add First Reservation
+            </Button>
+          </CardActions>
+        </Card>
+      ) : (
+        <Box 
+        display="flex"
+          flexWrap="wrap"
+          justifyContent="center"
+          gap={2}
+       >
+        {sortedReservations.map((reservation) => (
+          <Box
+            key={reservation.id}
+            sx={{
+              flex: '1 1 calc(25% - 24px)',
+              minWidth: '260px',
+              maxWidth: '280px',
+            }}
+          >
+            <ReservationCard
+              reservation={reservation}
+              onView={() => navigate(`/dashboard/detail/${reservation.id}`)}
+              onEdit={(e) => {
+                e.stopPropagation();
+                navigate(`/dashboard/edit/${reservation.id}`);
+              }}
+              onDelete={(e) => {
+                e.stopPropagation();
+                handleDelete(e, reservation.id);
+              }}
+            />
+          </Box>
+        ))}
+      </Box>
+      )}
     </Container>
   );
 }

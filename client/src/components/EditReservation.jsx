@@ -40,7 +40,7 @@ function EditReservation() {
   const [error, setError] = useState(null);
 
   const handleClose = () => {
-    navigate('/');
+    navigate('/dashboard');
   };
 
   const handleChange = (e) => {
@@ -58,7 +58,7 @@ function EditReservation() {
 
     try {
       await updateReservation(reservation.id, formData);
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       setError(err.message || 'Failed to update reservation.');
       setIsSubmitting(false);

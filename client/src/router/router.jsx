@@ -1,39 +1,72 @@
+import React from 'react';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 
-import React from 'react'
-import { createBrowserRouter} from 'react-router-dom'
-import App from '../App.jsx'
-import ReservationList from '../components/ReservationList.jsx'
-import ReservationDetail from '../components/ReservationDetail.jsx'
-import AddReservation from '../components/AddReservation.jsx'
-import EditReservation from '../components/EditReservation.jsx'
-import { loadReservations, loadReservation } from '../api/reservations.js'
+import Layout from '../components/Layout.jsx';
+import Dashboard from '../components/Dashboard.jsx';
+import Login from '../components/Auth/Login.jsx';
+import Register from '../components/Auth/Register.jsx';
+import ReservationList from '../components/ReservationList.jsx';
+import ReservationDetail from '../components/ReservationDetail.jsx';
+import AddReservation from '../components/AddReservation.jsx';
+import EditReservation from '../components/EditReservation.jsx';
+import Home from '../components/Home.jsx';
+
+import { loadReservations, loadReservation } from '../api/reservations.js';
+import { useAuth } from '../context/AuthContext.jsx';
+
+function ProtectedRoute({ children }) {
+  const { user } = useAuth();
+  return user ? children : <Navigate to="/login" replace />;
+}
 
 export const router = createBrowserRouter([
-    {
-      path: '/',
-      element: <App/>,  
-      children: [
-        {
-          index: true,
-          element: <ReservationList />,
-          loader: loadReservations
-        },
-        {
-          path: 'detail/:id',
-          element: <ReservationDetail />,
-          loader: ({ params }) => loadReservation(params.id)
-        },
-        {
-          path: 'add',
-          element: <AddReservation />
-        },
-        {
-          path: 'edit/:id',
-          element: <EditReservation />,
-          loader: ({ params }) => loadReservation(params.id)
-        }
-      ]
-    }
-  ])
+  {
+    path: '/',
+    element: <Layout />,
+    children: [
+      {
+        index: true,
+        element: <Home />,
+      },
+      {
+        path: 'login',
+        element: <Login />,
+      },
+      {
+        path: 'register',
+        element: <Register />,
+      },
+      {
+        path: 'dashboard',
+        element: (
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        ),
+        children: [
+          {
+            index: true,
+            element: <ReservationList />,
+            loader: loadReservations,
+          },
+          {
+            path: 'detail/:id',
+            element: <ReservationDetail />,
+            loader: ({ params }) => loadReservation(params.id),
+          },
+          {
+            path: 'add',
+            element: <AddReservation />,
+          },
+          {
+            path: 'edit/:id',
+            element: <EditReservation />,
+            loader: ({ params }) => loadReservation(params.id),
+          },
+        ],
+      },
+    ],
+  },
+]);
 
-  export default router
+export default router;

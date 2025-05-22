@@ -23,7 +23,7 @@ function ReservationDetail() {
       setIsDeleting(true);
       try {
         await deleteReservation(reservation.id);
-        navigate('/');
+        navigate('/dashboard');
       } catch (err) {
         setError(err.message || 'Failed to delete.');
         setIsDeleting(false);
@@ -65,7 +65,7 @@ function ReservationDetail() {
             variant="outlined"
             color="primary"
             component={Link}
-            to="/"
+            to="/dashboard"
             startIcon={<FaArrowLeft />}
           >
             Back

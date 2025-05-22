@@ -40,7 +40,7 @@ function AddReservation() {
   const [error, setError] = useState(null);
 
   const handleClose = () => {
-    navigate('/');
+    navigate('/dashboard');
   };
 
   const handleChange = (e) => {
@@ -58,7 +58,7 @@ function AddReservation() {
 
     try {
       await createReservation(formData);
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       setError(err.message || 'Failed to create reservation.');
       setIsSubmitting(false);
