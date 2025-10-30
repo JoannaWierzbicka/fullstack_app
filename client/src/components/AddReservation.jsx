@@ -1,220 +1,97 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
-  Button,
-  Box,
-  Paper,
-  Stack,
-  Typography
-} from '@mui/material';
-import { FaSave, FaTimes } from 'react-icons/fa';
-import { createReservation } from '../api/reservations';
+import ReservationFormDialog from './ReservationFormDialog.jsx';
+import { createReservation } from '../api/reservations.js';
+import { fetchProperties } from '../api/properties.js';
+import { fetchRooms } from '../api/rooms.js';
+import { addDays, format, startOfToday } from 'date-fns';
+
+const formatDateInput = (date) => format(date, 'yyyy-MM-dd');
 
 function AddReservation() {
   const navigate = useNavigate();
-  const [open, setOpen] = useState(true);
-
-  const [formData, setFormData] = useState({
-    name: '',
-    lastname: '',
-    phone: '',
-    mail: '',
-    start_date: '',
-    end_date: '',
-    room: '',
-    price: '',
-    adults: '',
-    children: '',
-  });
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [properties, setProperties] = useState([]);
+  const [rooms, setRooms] = useState([]);
+  const [selectedPropertyId, setSelectedPropertyId] = useState('');
+  const [loadingProperties, setLoadingProperties] = useState(true);
+  const [loadingRooms, setLoadingRooms] = useState(false);
   const [error, setError] = useState(null);
 
-  const handleClose = () => {
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoadingProperties(true);
+    fetchProperties({ signal: controller.signal })
+      .then((data) => {
+        setProperties(data);
+        if (data.length > 0) {
+          setSelectedPropertyId(data[0].id);
+        }
+        setError(null);
+      })
+      .catch((err) => {
+        if (err.name === 'AbortError') return;
+        setError(err.message || 'Unable to load properties.');
+      })
+      .finally(() => setLoadingProperties(false));
+
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedPropertyId) {
+      setRooms([]);
+      setError(null);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    setLoadingRooms(true);
+    fetchRooms({ propertyId: selectedPropertyId, signal: controller.signal })
+      .then((data) => {
+        setRooms(data);
+        setError(null);
+      })
+      .catch((err) => {
+        if (err.name === 'AbortError') return;
+        setError(err.message || 'Unable to load rooms.');
+      })
+      .finally(() => setLoadingRooms(false));
+
+    return () => controller.abort();
+  }, [selectedPropertyId]);
+
+  const initialValues = useMemo(() => {
+    const today = startOfToday();
+    return {
+      property_id: selectedPropertyId,
+      start_date: formatDateInput(today),
+      end_date: formatDateInput(addDays(today, 1)),
+    };
+  }, [selectedPropertyId]);
+
+  const handleSubmit = async (formValues) => {
+    await createReservation(formValues);
     navigate('/dashboard');
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setError(null);
-
-    try {
-      await createReservation(formData);
-      navigate('/dashboard');
-    } catch (err) {
-      setError(err.message || 'Failed to create reservation.');
-      setIsSubmitting(false);
-    }
-  };
+  const handleCancel = () => navigate('/dashboard');
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Add New Reservation</DialogTitle>
-      <DialogContent dividers>
-        {error && (
-          <Typography color="error" variant="body2" mb={2}>
-            {error}
-          </Typography>
-        )}
-
-        <Paper elevation={0}>
-          <Box
-            component="form"
-            onSubmit={handleSubmit}
-            sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}
-          >
-            <TextField
-              label="First Name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              fullWidth
-            />
-            <TextField
-              label="Last Name"
-              name="lastname"
-              value={formData.lastname}
-              onChange={handleChange}
-              required
-              fullWidth
-            />
-            <TextField
-              label="Phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              required
-              fullWidth
-            />
-            <TextField
-              label="Email"
-              name="mail"
-              value={formData.mail}
-              onChange={handleChange}
-              type="email"
-              required
-              fullWidth
-            />
-            <TextField
-              label="Start Date"
-              name="start_date"
-              type="date"
-              value={formData.start_date}
-              onChange={handleChange}
-              required
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-            />
-            <TextField
-              label="End Date"
-              name="end_date"
-              type="date"
-              value={formData.end_date}
-              onChange={handleChange}
-              required
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-            />
-
-            <FormControl required fullWidth>
-              <InputLabel id="room-label">Room</InputLabel>
-              <Select
-                labelId="room-label"
-                name="room"
-                value={formData.room}
-                onChange={handleChange}
-                label="Room"
-              >
-                <MenuItem value="1">Room 1</MenuItem>
-                <MenuItem value="2">Room 2</MenuItem>
-              </Select>
-            </FormControl>
-
-            <TextField
-              label="Price"
-              name="price"
-              type="number"
-              value={formData.price}
-              onChange={handleChange}
-              required
-              fullWidth
-            />
-
-            <FormControl required fullWidth>
-              <InputLabel id="adults-label">Adults</InputLabel>
-              <Select
-                labelId="adults-label"
-                name="adults"
-                value={formData.adults}
-                onChange={handleChange}
-                label="Adults"
-              >
-                {[1, 2, 3, 4, 5, 6].map((num) => (
-                  <MenuItem key={num} value={num}>
-                    {num}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <FormControl required fullWidth>
-              <InputLabel id="children-label">Children</InputLabel>
-              <Select
-                labelId="children-label"
-                name="children"
-                value={formData.children}
-                onChange={handleChange}
-                label="Children"
-              >
-                {[0, 1, 2, 3, 4, 5, 6].map((num) => (
-                  <MenuItem key={num} value={num}>
-                    {num}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <DialogActions sx={{ justifyContent: 'flex-end', mt: 2 }}>
-              <Button
-                onClick={handleClose}
-                color="secondary"
-                startIcon={<FaTimes />}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                disabled={isSubmitting}
-                startIcon={<FaSave />}
-              >
-                {isSubmitting ? 'Creating...' : 'Create'}
-              </Button>
-            </DialogActions>
-          </Box>
-        </Paper>
-      </DialogContent>
-    </Dialog>
+    <ReservationFormDialog
+      title="Add New Reservation"
+      initialValues={initialValues}
+      submitLabel="Create"
+      submittingLabel="Creating..."
+      onSubmit={handleSubmit}
+      onCancel={handleCancel}
+      properties={properties}
+      rooms={rooms}
+      onPropertyChange={setSelectedPropertyId}
+      loadingProperties={loadingProperties}
+      loadingRooms={loadingRooms}
+      dataError={error}
+      minDate={formatDateInput(startOfToday())}
+    />
   );
 }
 

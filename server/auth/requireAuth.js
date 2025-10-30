@@ -1,12 +1,26 @@
-import { supabase } from "./supabaseClient";
+import { supabase } from './supabaseClient.js';
+import { createHttpError } from '../utils/httpError.js';
 
 export async function requireAuth(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+  if (!token) {
+    next(createHttpError(401, 'Unauthorized'));
+    return;
+  }
 
-  const { data: { user }, error } = await supabase.auth.getUser(token);
-  if (error || !user) return res.status(401).json({ error: 'Invalid token' });
+  try {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(token);
 
-  req.user = user;
-  next();
+    if (error || !user) {
+      throw createHttpError(401, 'Invalid or expired token.');
+    }
+
+    req.user = user;
+    next();
+  } catch (err) {
+    next(err instanceof Error ? err : createHttpError(401, 'Unauthorized'));
+  }
 }

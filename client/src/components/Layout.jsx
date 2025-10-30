@@ -1,9 +1,32 @@
-import React from 'react';
-import { Outlet } from 'react-router-dom';
-import Navbar from './Navbar';
-import { Box, Container, Typography } from '@mui/material';
+import { useEffect, useState } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import Navbar from './Navbar.jsx';
+import {
+  Alert,
+  Box,
+  Container,
+  Snackbar,
+  Typography,
+} from '@mui/material';
 
 export default function Layout() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [flash, setFlash] = useState(null);
+
+  useEffect(() => {
+    const flashMessage = location.state?.flash;
+    if (flashMessage) {
+      setFlash(flashMessage);
+      navigate(location.pathname + location.search + location.hash, { replace: true });
+    }
+  }, [location, navigate]);
+
+  const handleFlashClose = (_event, reason) => {
+    if (reason === 'clickaway') return;
+    setFlash(null);
+  };
+
   return (
     <>
       <Navbar />
@@ -19,6 +42,18 @@ export default function Layout() {
           </Typography>
         </Container>
       </Box>
+      <Snackbar
+        open={Boolean(flash)}
+        autoHideDuration={4000}
+        onClose={handleFlashClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        {flash ? (
+          <Alert onClose={handleFlashClose} severity={flash.severity || 'info'} sx={{ width: '100%' }}>
+            {flash.message}
+          </Alert>
+        ) : null}
+      </Snackbar>
     </>
   );
 }

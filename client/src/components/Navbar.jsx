@@ -2,10 +2,11 @@
 import { AppBar, Toolbar, Typography, Button, Stack } from '@mui/material';
 import FilterHdrIcon from '@mui/icons-material/FilterHdr';
 import { Link, NavLink } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext.jsx';
 
 export default function Navbar() {
-    const { user, logout } = useAuth();
+    const { user, isAuthenticated, logout, isLoggingOut } = useAuth();
+    const userLabel = user?.email || user?.phone || null;
 
     return (
         <AppBar
@@ -26,13 +27,23 @@ export default function Navbar() {
                 </Stack>
 
                 <Stack direction="row" spacing={2} alignItems="center">
-                    {user ? (
+                    {isAuthenticated ? (
                         <>
+                            {userLabel && (
+                                <Typography variant="body2" sx={{ mr: 1 }}>
+                                    {userLabel}
+                                </Typography>
+                            )}
                             <Button
                                 component={NavLink}
                                 to="/dashboard"
                                 variant="contained"
                                 color="secondary"
+                                sx={{
+                                    '&.active': {
+                                        backgroundColor: 'secondary.dark',
+                                    },
+                                }}
                             >
                                 All Reservations
                             </Button>
@@ -53,11 +64,27 @@ export default function Navbar() {
                             </Button>
 
                             <Button
+                                component={NavLink}
+                                to="/dashboard/settings"
+                                variant="outlined"
+                                color="secondary"
+                                sx={{
+                                    '&.active': {
+                                        backgroundColor: 'secondary.main',
+                                        color: 'white',
+                                    },
+                                }}
+                            >
+                                Settings
+                            </Button>
+
+                            <Button
                                 variant="text"
                                 color="inherit"
                                 onClick={logout}
+                                disabled={isLoggingOut}
                             >
-                                Logout
+                                {isLoggingOut ? 'Logging out...' : 'Logout'}
                             </Button>
                         </>
                     ) : (
