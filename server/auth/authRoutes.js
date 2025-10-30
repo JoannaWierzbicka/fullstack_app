@@ -1,52 +1,71 @@
-import express from 'express';
+import { Router } from 'express';
 import { supabase } from './supabaseClient.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { createHttpError } from '../utils/httpError.js';
 
-const router = express.Router();
+const router = Router();
 
-router.post('/register', async (req, res) => {
-  const { email, password } = req.body;
+router.post(
+  '/register',
+  asyncHandler(async (req, res) => {
+    const { email, password } = req.body || {};
 
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-  });
-
-  if (error) {
-    console.error('Supabase registration error:', error);
-    const msg = error.message?.toLowerCase();
-    if (msg.includes('already') || msg.includes('registered')) {
-      return res.status(400).json({ error: { message: 'User already registered' }, user: null });
-
+    if (!email || !password) {
+      throw createHttpError(400, 'Email and password are required.');
     }
 
-    return res.status(400).json({ error: error.message, user: null });
-  }
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
 
-  return res.status(200).json({ user: data.user, error: null });
-});
+    if (error) {
+      const message = error.message || 'Unable to register user.';
+      throw createHttpError(error.status || 400, message);
+    }
 
-router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    res.json({ user: data.user, session: data.session ?? null });
+  }),
+);
 
-  if (error) {
-    console.error('Login error:', error);
-    return res.status(400).json({ error: error.message });
-  }
+router.post(
+  '/login',
+  asyncHandler(async (req, res) => {
+    const { email, password } = req.body || {};
 
-  return res.json({ session: data.session, user: data.user });
-});
+    if (!email || !password) {
+      throw createHttpError(400, 'Email and password are required.');
+    }
 
-router.post('/logout', async (req, res) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  const { error } = await supabase.auth.signOut({ access_token: token });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-  if (error) {
-    console.error('Logout error:', error);
-    return res.status(400).json({ error: error.message });
-  }
+    if (error) {
+      const message = error.message || 'Invalid email or password.';
+      throw createHttpError(error.status || 400, message);
+    }
 
-  return res.json({ message: 'Logged out' });
-});
+    res.json({ session: data.session, user: data.user });
+  }),
+);
+
+router.post(
+  '/logout',
+  asyncHandler(async (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+      throw createHttpError(400, 'Missing access token.');
+    }
+
+    const { error } = await supabase.auth.signOut({ access_token: token });
+
+    if (error) {
+      const message = error.message || 'Unable to log out.';
+      throw createHttpError(error.status || 400, message);
+    }
+
+    res.json({ message: 'Logged out' });
+  }),
+);
 
 export default router;

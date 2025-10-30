@@ -1,21 +1,35 @@
-const API_URL = 'http://localhost:3000/api/auth';
+import { apiClient } from './client.js';
 
-export async function loginUser(email, password) {
-  const res = await fetch(`${API_URL}/login`, {
+const AUTH_ROOT = '/auth';
+
+export async function loginUser({ email, password, signal } = {}) {
+  if (!email || !password) {
+    throw new Error('Email and password are required');
+  }
+
+  return apiClient(`${AUTH_ROOT}/login`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
+    data: { email, password },
+    signal,
   });
-  const data = await res.json();
-  return { session: data.session, user: data.user, error: data.error };
 }
 
-export async function registerUser(email, password) {
-  const res = await fetch(`${API_URL}/register`, {
+export async function registerUser({ email, password, signal } = {}) {
+  if (!email || !password) {
+    throw new Error('Email and password are required');
+  }
+
+  return apiClient(`${AUTH_ROOT}/register`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
+    data: { email, password },
+    signal,
   });
-  const data = await res.json();
-  return { user: data.user, error: data.error };
+}
+
+export async function logoutUser({ signal, token } = {}) {
+  return apiClient(`${AUTH_ROOT}/logout`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    signal,
+  });
 }

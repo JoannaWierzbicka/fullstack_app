@@ -1,35 +1,64 @@
 import { useState } from 'react';
-import { TextField, Button, Typography, Box, Alert } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { registerUser } from '../../api/auth';
+import { Alert, Box, Button, TextField, Typography } from '@mui/material';
+import { registerUser, loginUser } from '../../api/auth.js';
+import { useAuth } from '../../context/AuthContext.jsx';
+
+const REGISTRATION_SUCCESS_FLASH = {
+  message: 'Dziękujemy za rejestrację! Zostałeś zalogowany.',
+  severity: 'success',
+};
 
 function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError('');
-    setSuccessMessage('');
+    setIsSubmitting(true);
 
-    const { user, error } = await registerUser(email, password);
+    try {
+      const registrationResult = await registerUser({ email, password });
+      if (registrationResult?.error) {
+        throw new Error(registrationResult.error);
+      }
 
-    if (error) {
-      console.log(error)
-      if (error.message.includes('already registered') || error.message.includes('User already registered')) {
+      let session = registrationResult?.session;
+      let user = registrationResult?.user;
+
+      if (!session || !user) {
+        const loginResult = await loginUser({ email, password });
+        if (loginResult?.error) {
+          throw new Error(loginResult.error);
+        }
+        session = loginResult?.session;
+        user = loginResult?.user;
+      }
+
+      if (!session || !user) {
+        throw new Error('Registration succeeded, but automatic login failed. Please try logging in manually.');
+      }
+
+      login({ user, session });
+      navigate('/dashboard', {
+        replace: true,
+        state: { flash: REGISTRATION_SUCCESS_FLASH },
+      });
+    } catch (err) {
+      const message = err.message || 'Something went wrong during registration.';
+      if (message.toLowerCase().includes('already')) {
         setError('An account with this email already exists.');
       } else {
-        setError(error.message);
+        setError(message);
       }
-      return;
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setSuccessMessage(
-      'Registration successful! Please check your email and confirm your address.'
-    );
   };
 
   return (
@@ -37,26 +66,33 @@ function Register() {
       <Typography variant="h5" gutterBottom>Register</Typography>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      {successMessage && <Alert severity="success" sx={{ mb: 2 }}>{successMessage}</Alert>}
 
       <form onSubmit={handleSubmit}>
         <TextField
           label="Email"
           fullWidth
+          required
           margin="normal"
           value={email}
-          onChange={e => setEmail(e.target.value)}
+          onChange={(event) => setEmail(event.target.value)}
         />
         <TextField
           label="Password"
           fullWidth
+          required
           type="password"
           margin="normal"
           value={password}
-          onChange={e => setPassword(e.target.value)}
+          onChange={(event) => setPassword(event.target.value)}
         />
-        <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
-          Register
+        <Button
+          type="submit"
+          variant="contained"
+          fullWidth
+          sx={{ mt: 2 }}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Registering...' : 'Register'}
         </Button>
       </form>
     </Box>

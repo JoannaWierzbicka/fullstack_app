@@ -1,19 +1,31 @@
-import { useLoaderData, useNavigate, Link } from 'react-router-dom';
+import { Link, useLoaderData, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { deleteReservation } from '../api/reservations';
+import { deleteReservation } from '../api/reservations.js';
 import {
-  Paper,
-  Typography,
   Box,
-  Stack,
   Button,
+  Container,
   Divider,
-  Container
+  Paper,
+  Stack,
+  Typography,
 } from '@mui/material';
-import { FaTrashAlt, FaArrowLeft } from 'react-icons/fa';
+import { format } from 'date-fns';
+import { FaArrowLeft, FaTrashAlt } from 'react-icons/fa';
+
+const formatDate = (value) => {
+  const date = value ? new Date(value) : null;
+  return date && !Number.isNaN(date.getTime()) ? format(date, 'd MMM yyyy') : '—';
+};
+
+const numberFormatter = new Intl.NumberFormat('pl-PL', {
+  style: 'currency',
+  currency: 'PLN',
+  maximumFractionDigits: 2,
+});
 
 function ReservationDetail() {
-  const reservation = useLoaderData();
+  const reservation = useLoaderData() ?? {};
   const navigate = useNavigate();
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState(null);
@@ -38,24 +50,37 @@ function ReservationDetail() {
           Reservation Details
         </Typography>
 
+        {!reservation?.id && (
+          <AlertMessage message="Reservation could not be found." />
+        )}
+
         {error && (
-          <Typography color="error" variant="body2" gutterBottom>
-            {error}
-          </Typography>
+          <AlertMessage message={error} severity="error" />
         )}
 
         <Divider sx={{ my: 2 }} />
 
         <Stack spacing={1}>
-          <DetailItem label="Name" value={`${reservation.name} ${reservation.lastname}`} />
-          <DetailItem label="Phone" value={reservation.phone} />
-          <DetailItem label="Email" value={reservation.mail} />
-          <DetailItem label="Room" value={reservation.room} />
-          <DetailItem label="Price" value={`$${reservation.price}`} />
-          <DetailItem label="From" value={reservation.start_date} />
-          <DetailItem label="To" value={reservation.end_date} />
-          <DetailItem label="Adults" value={reservation.adults} />
-          <DetailItem label="Children" value={reservation.children} />
+          <DetailItem
+            label="Name"
+            value={[reservation.name, reservation.lastname].filter(Boolean).join(' ') || '—'}
+          />
+          <DetailItem label="Phone" value={reservation.phone || '—'} />
+          <DetailItem label="Email" value={reservation.mail || '—'} />
+          <DetailItem label="Property" value={reservation.property?.name || '—'} />
+          <DetailItem label="Room" value={reservation.room?.name || '—'} />
+          <DetailItem
+            label="Price"
+            value={
+              reservation.price !== undefined
+                ? numberFormatter.format(Number(reservation.price))
+                : '—'
+            }
+          />
+          <DetailItem label="From" value={formatDate(reservation.start_date)} />
+          <DetailItem label="To" value={formatDate(reservation.end_date)} />
+          <DetailItem label="Adults" value={reservation.adults ?? '—'} />
+          <DetailItem label="Children" value={reservation.children ?? '—'} />
         </Stack>
 
         <Divider sx={{ my: 3 }} />
@@ -88,10 +113,20 @@ function ReservationDetail() {
 function DetailItem({ label, value }) {
   return (
     <Box>
-      <Typography variant="subtitle2" color="textSecondary">
+      <Typography variant="subtitle2" color="text.secondary">
         {label}
       </Typography>
       <Typography variant="body1">{value}</Typography>
+    </Box>
+  );
+}
+
+function AlertMessage({ message, severity = 'error' }) {
+  return (
+    <Box sx={{ mb: 2 }}>
+      <Typography color={severity === 'error' ? 'error' : 'warning.main'} variant="body2">
+        {message}
+      </Typography>
     </Box>
   );
 }
