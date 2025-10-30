@@ -2,7 +2,9 @@ import express from "express";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-import { createClient } from "@supabase/supabase-js";
+import router from './auth/authRoutes.js';
+import cors from 'cors';
+import { supabase } from "./auth/supabaseClient.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,12 +15,12 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
+app.use(cors({
+  origin: 'http://localhost:5173',  
+  credentials: true,               
+}));
+app.use('/api/auth', router);
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-// Fetch all or filter by query params
 app.get('/api/reservations', async (req, res) => {
   const { lastname, start_date } = req.query;
   let query = supabase.from('reservations').select('*');
@@ -35,7 +37,6 @@ app.get('/api/reservations', async (req, res) => {
   res.json(data);
 });
 
-// Fetch single by ID
 app.get('/api/reservations/:id', async (req, res) => {
   const { id } = req.params;
   const { data, error } = await supabase
@@ -49,14 +50,13 @@ app.get('/api/reservations/:id', async (req, res) => {
   res.json(data[0]);
 });
 
-// Create
 app.post('/api/reservations', async (req, res) => {
-  const { name, lastname, phone, mail, start_date, end_date, room, price } = req.body;
+  const { name, lastname, phone, mail, start_date, end_date, room, price, adults, children } = req.body;
   if (!name) return res.status(400).json({ error: 'Name is required!' });
 
   const { data, error } = await supabase
     .from('reservations')
-    .insert({ name, lastname, phone, mail, start_date, end_date, room, price })
+    .insert({ name, lastname, phone, mail, start_date, end_date, room, price, adults, children })
     .select();
 
   if (error) return res.status(500).json({ error: error.message });
@@ -66,11 +66,11 @@ app.post('/api/reservations', async (req, res) => {
 // Update
 app.put('/api/reservations/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, lastname, phone, mail, start_date, end_date, room, price } = req.body;
+  const { name, lastname, phone, mail, start_date, end_date, room, price, adults, children } = req.body;
 
   const { data, error } = await supabase
     .from('reservations')
-    .update({ name, lastname, phone, mail, start_date, end_date, room, price })
+    .update({ name, lastname, phone, mail, start_date, end_date, room, price, adults, children })
     .eq('id', id)
     .select();
 
