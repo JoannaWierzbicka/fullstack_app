@@ -32,8 +32,8 @@ const ReservationCalendar = () => {
   }, [currentMonth]);
 
   const rooms = [
-    { id: 1, name: 'Pokój 1' },
-    { id: 2, name: 'Pokój 2' }
+    { id: 1, name: 'Góra' },
+    { id: 2, name: 'Kominkowy' }
   ];
 
   const getReservationsForRoom = (roomId) => {
