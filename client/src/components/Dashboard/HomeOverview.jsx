@@ -132,6 +132,14 @@ export default function HomeOverview() {
     return rooms.map((room) => ({ ...room, propertyName: selectedProperty.name }));
   }, [rooms, selectedProperty]);
 
+  const [mobileActiveRoomId, setMobileActiveRoomId] = useState('');
+
+  useEffect(() => {
+    const roomFromFilter = rooms.find((room) => room.property_id === selectedPropertyId)?.id;
+    const fallback = roomFromFilter || rooms[0]?.id || '';
+    setMobileActiveRoomId((prev) => (prev && rooms.some((room) => room.id === prev) ? prev : fallback));
+  }, [rooms, selectedPropertyId]);
+
   const closeDialog = () => {
     setDialogState({
       open: false,
@@ -316,6 +324,14 @@ export default function HomeOverview() {
                   reservations={reservations}
                   onDayClick={handleDayClick}
                   onReservationSelect={openEditDialog}
+                  onRoomChange={(roomId) => {
+                    const targetRoom = rooms.find((room) => room.id === roomId);
+                    if (targetRoom?.property_id) {
+                      setSelectedPropertyId(targetRoom.property_id);
+                    }
+                    setMobileActiveRoomId(roomId);
+                  }}
+                  selectedRoomId={mobileActiveRoomId}
                 />
               </>
             )}
