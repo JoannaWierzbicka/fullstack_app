@@ -107,22 +107,28 @@ function ReservationList({
       <Box
         display="flex"
         justifyContent="space-between"
-        alignItems="center"
+        alignItems="stretch"
         mb={3}
-        flexDirection={{ xs: 'column', sm: 'row' }}
-        gap={2}
+        flexDirection={{ xs: 'column', md: 'row' }}
+        gap={2.5}
       >
         <Box sx={{ flexGrow: 1 }}>
           {showHeader && (
-            <Typography variant="h5" component="h2">
+            <Typography variant="h5" component="h2" sx={{ fontSize: { xs: '1.5rem', sm: '1.75rem' } }}>
               {t('reservationList.title')}
             </Typography>
           )}
         </Box>
 
-        <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} gap={2}>
+        <Box
+          display="flex"
+          flexDirection={{ xs: 'column', sm: 'row' }}
+          gap={2}
+          alignItems={{ xs: 'stretch', sm: 'center' }}
+          sx={{ width: { xs: '100%', md: 'auto' } }}
+        >
           {hasRoomFilter && (
-            <FormControl size="small" sx={{ minWidth: 200 }}>
+            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 200 } }}>
               <InputLabel id="reservation-room-filter-label">
                 {t('reservationList.filterByRoom')}
               </InputLabel>
@@ -142,7 +148,7 @@ function ReservationList({
             </FormControl>
           )}
 
-          <FormControl size="small" sx={{ minWidth: 200 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 200 } }}>
             <InputLabel id="reservation-sort-label">{t('reservationList.sortBy')}</InputLabel>
             <Select
               labelId="reservation-sort-label"
@@ -163,6 +169,7 @@ function ReservationList({
             color="secondary"
             onClick={() => onAddReservation?.()}
             disabled={!canAdd || !onAddReservation}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
           >
             {t('reservationList.add')}
           </Button>
@@ -186,14 +193,24 @@ function ReservationList({
           </CardActions>
         </Card>
       ) : (
-        <Box display="flex" flexWrap="wrap" justifyContent="center" gap={2}>
+        <Box
+          display="flex"
+          flexWrap="wrap"
+          justifyContent={{ xs: 'stretch', sm: 'center' }}
+          gap={2}
+        >
           {sortedReservations.map((reservation) => (
             <Box
               key={reservation.id}
               sx={{
-                flex: '1 1 calc(25% - 24px)',
-                minWidth: '260px',
-                maxWidth: '280px',
+                flex: {
+                  xs: '1 1 100%',
+                  sm: '1 1 calc(50% - 16px)',
+                  lg: '1 1 calc(33.333% - 20px)',
+                  xl: '1 1 calc(25% - 24px)',
+                },
+                minWidth: { xs: '100%', sm: '260px' },
+                maxWidth: { xs: '100%', sm: '320px' },
               }}
             >
               <ReservationCard

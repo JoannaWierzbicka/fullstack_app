@@ -55,6 +55,7 @@ function ReservationCard({ reservation, onEdit, onDelete, onView, disabled = fal
       }}
       sx={{
         height: '100%',
+        width: '100%',
         cursor: disabled ? 'not-allowed' : 'pointer',
         display: 'flex',
         flexDirection: 'column',

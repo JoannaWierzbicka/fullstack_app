@@ -289,7 +289,11 @@ export default function HomeOverview() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <Stack direction={{ xs: 'column', md: 'row' }} alignItems={{ md: 'center' }} spacing={2}>
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        alignItems={{ xs: 'stretch', md: 'center' }}
+        spacing={{ xs: 2.5, md: 2 }}
+      >
         <Box sx={{ flexGrow: 1 }}>
           <Typography variant="h4" component="h1">
             {t('dashboard.title')}
@@ -299,7 +303,11 @@ export default function HomeOverview() {
           </Typography>
         </Box>
 
-        <FormControl size="small" sx={{ minWidth: 220 }} disabled={loadingProperties || properties.length === 0}>
+        <FormControl
+          size="small"
+          sx={{ minWidth: { xs: '100%', md: 240 }, maxWidth: { xs: '100%', md: 260 } }}
+          disabled={loadingProperties || properties.length === 0}
+        >
           <InputLabel id="dashboard-property-select-label">
             {t('reservationForm.fields.property')}
           </InputLabel>
@@ -321,7 +329,12 @@ export default function HomeOverview() {
           </Select>
         </FormControl>
 
-        <Button variant="outlined" component={RouterLink} to="/dashboard/settings">
+        <Button
+          variant="outlined"
+          component={RouterLink}
+          to="/dashboard/settings"
+          sx={{ width: { xs: '100%', md: 'auto' } }}
+        >
           {t('dashboard.manageProperties')}
         </Button>
       </Stack>
@@ -335,7 +348,13 @@ export default function HomeOverview() {
       ) : (
         <>
           <Box>
-            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              justifyContent="space-between"
+              alignItems={{ xs: 'flex-start', sm: 'center' }}
+              spacing={{ xs: 2, sm: 0 }}
+              mb={2.5}
+            >
               <Typography variant="h6">
                 {`${t('dashboard.availability')} ${
                   selectedProperty ? `— ${selectedProperty.name}` : ''
@@ -350,6 +369,7 @@ export default function HomeOverview() {
                     room_id: roomFilterId !== 'all' ? roomFilterId : undefined,
                   })
                 }
+                sx={{ width: { xs: '100%', sm: 'auto' } }}
               >
                 {t('dashboard.addReservation')}
               </Button>
@@ -366,23 +386,25 @@ export default function HomeOverview() {
                     {roomsError || reservationsError}
                   </Alert>
                 )}
-                <ReservationCalendar
-                  rooms={roomsForCalendar}
-                  reservations={reservations}
-                  onDayClick={handleDayClick}
-                  onReservationSelect={openEditDialog}
-                  onRoomChange={(roomId) => {
-                    const targetRoom = rooms.find((room) => room.id === roomId);
-                    if (targetRoom?.property_id) {
-                      setSelectedPropertyId(targetRoom.property_id);
-                    }
-                    setMobileActiveRoomId(roomId);
-                    if (roomId) {
-                      setRoomFilterId(roomId);
-                    }
-                  }}
-                  selectedRoomId={mobileActiveRoomId}
-                />
+                <Box sx={{ width: '100%', overflow: 'hidden' }}>
+                  <ReservationCalendar
+                    rooms={roomsForCalendar}
+                    reservations={reservations}
+                    onDayClick={handleDayClick}
+                    onReservationSelect={openEditDialog}
+                    onRoomChange={(roomId) => {
+                      const targetRoom = rooms.find((room) => room.id === roomId);
+                      if (targetRoom?.property_id) {
+                        setSelectedPropertyId(targetRoom.property_id);
+                      }
+                      setMobileActiveRoomId(roomId);
+                      if (roomId) {
+                        setRoomFilterId(roomId);
+                      }
+                    }}
+                    selectedRoomId={mobileActiveRoomId}
+                  />
+                </Box>
               </>
             )}
           </Box>

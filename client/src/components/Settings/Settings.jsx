@@ -162,10 +162,25 @@ export default function Settings() {
         </Alert>
       )}
 
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
-        <Card sx={{ flex: '1 1 320px' }}>
+      <Stack
+        direction={{ xs: 'column', lg: 'row' }}
+        spacing={{ xs: 3, lg: 4 }}
+        alignItems="stretch"
+      >
+        <Card
+          sx={{
+            flex: { xs: '1 1 100%', lg: '1 1 40%' },
+            minWidth: { xs: '100%', lg: 0 },
+          }}
+        >
           <CardContent>
-            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              justifyContent="space-between"
+              alignItems={{ xs: 'flex-start', sm: 'center' }}
+              spacing={{ xs: 1.5, sm: 2 }}
+              mb={2.5}
+            >
               <Typography variant="h6">{t('settings.propertiesTitle')}</Typography>
               <Button
                 startIcon={<Add />}
@@ -173,6 +188,12 @@ export default function Settings() {
                 onClick={() => {
                   setEditingProperty(null);
                   setPropertyDialogOpen(true);
+                }}
+                sx={{
+                  px: { xs: 2.5, sm: 3 },
+                  minWidth: { xs: 0, sm: 170 },
+                  borderRadius: 3,
+                  alignSelf: { xs: 'flex-end', sm: 'initial' },
                 }}
               >
                 {t('settings.addProperty')}
@@ -234,9 +255,20 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        <Card sx={{ flex: '2 1 480px' }}>
+        <Card
+          sx={{
+            flex: { xs: '1 1 100%', lg: '1 1 60%' },
+            minWidth: { xs: '100%', lg: 0 },
+          }}
+        >
           <CardContent>
-            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              justifyContent="space-between"
+              alignItems={{ xs: 'flex-start', sm: 'center' }}
+              spacing={{ xs: 1.5, sm: 2 }}
+              mb={2.5}
+            >
               <Typography variant="h6">{roomsHeading}</Typography>
               <Button
                 startIcon={<Add />}
@@ -246,6 +278,12 @@ export default function Settings() {
                   setRoomDialogOpen(true);
                 }}
                 disabled={!selectedProperty || properties.length === 0}
+                sx={{
+                  px: { xs: 2.5, sm: 3 },
+                  minWidth: { xs: 0, sm: 170 },
+                  borderRadius: 3,
+                  alignSelf: { xs: 'flex-end', sm: 'initial' },
+                }}
               >
                 {t('roomForm.addTitle')}
               </Button>
