@@ -1,5 +1,9 @@
 import { authStorage } from '../context/authStorage.js';
 
+export const AUTH_EVENTS = {
+  UNAUTHORIZED: 'auth:unauthorized',
+};
+
 const DEFAULT_API_BASE_URL = '/api';
 
 const normalizeBaseUrl = (url) => {
@@ -50,6 +54,13 @@ export async function apiClient(path, { method = 'GET', data, headers, signal } 
   const payload = await parseResponse(response).catch(() => null);
 
   if (!response.ok) {
+    if (response.status === 401) {
+      authStorage.clear();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent(AUTH_EVENTS.UNAUTHORIZED));
+      }
+    }
+
     const message =
       typeof payload === 'object' && payload?.error
         ? payload.error

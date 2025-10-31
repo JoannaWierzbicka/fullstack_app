@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { logoutUser } from '../api/auth.js';
+import { AUTH_EVENTS } from '../api/client.js';
 import { authStorage } from './authStorage.js';
 
 const initialState = {
@@ -15,6 +16,23 @@ export function AuthProvider({ children }) {
     session: authStorage.getSession(),
   }));
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      authStorage.clear();
+      setAuthState(initialState);
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener(AUTH_EVENTS.UNAUTHORIZED, handleUnauthorized);
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener(AUTH_EVENTS.UNAUTHORIZED, handleUnauthorized);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     authStorage.setUser(user);

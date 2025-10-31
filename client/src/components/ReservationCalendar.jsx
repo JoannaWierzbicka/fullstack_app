@@ -1,18 +1,31 @@
 import React, { useMemo, useState } from 'react';
-import { Box, IconButton, Typography } from '@mui/material';
+import {
+  Box,
+  FormControl,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Select,
+  Stack,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
 import { ArrowBackIos, ArrowForwardIos } from '@mui/icons-material';
 import {
+  addDays,
   addMonths,
   differenceInCalendarDays,
   eachDayOfInterval,
   endOfMonth,
   format,
+  isBefore,
   isSameDay,
   isWithinInterval,
-  isBefore,
   parseISO,
   startOfMonth,
   startOfToday,
+  startOfWeek,
 } from 'date-fns';
 
 const safeParseDate = (value) => {
@@ -26,7 +39,11 @@ const ReservationCalendar = ({
   rooms: providedRooms,
   onReservationSelect,
   onDayClick,
+  onRoomChange,
+  selectedRoomId,
 }) => {
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const daysInMonth = useMemo(() => {
@@ -72,6 +89,23 @@ const ReservationCalendar = ({
     );
   }
 
+  if (!isDesktop) {
+    return (
+      <MonthlyCalendar
+        currentMonth={currentMonth}
+        onNavigate={(direction) =>
+          setCurrentMonth((prev) => addMonths(prev, direction === 'prev' ? -1 : 1))
+        }
+        rooms={rooms}
+        activeRoomId={selectedRoomId || rooms[0]?.id}
+        onRoomChange={onRoomChange}
+        reservations={reservations}
+        onDayClick={onDayClick}
+        onReservationSelect={onReservationSelect}
+      />
+    );
+  }
+
   return (
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
@@ -83,11 +117,17 @@ const ReservationCalendar = ({
           <ArrowForwardIos fontSize="small" />
         </IconButton>
       </Box>
-
       <Box
         display="grid"
-        gridTemplateColumns={`140px repeat(${daysInMonth.length}, minmax(42px, 1fr))`}
-        sx={{ overflowX: 'auto', borderLeft: '1px solid', borderTop: '1px solid', borderColor: 'grey.300' }}
+        gridTemplateColumns={`160px repeat(${daysInMonth.length}, minmax(32px, 1fr))`}
+        sx={{
+          borderLeft: '1px solid',
+          borderTop: '1px solid',
+          borderColor: 'grey.300',
+          borderRadius: 1,
+          overflow: 'hidden',
+          minWidth: '100%',
+        }}
       >
         <Box
           sx={{
@@ -175,7 +215,6 @@ const DayCell = ({ day, room, reservationsForRoom, onDayClick, onReservationSele
 
   const hasReservation = Boolean(reservation);
   const isStart = hasReservation && isSameDay(day, safeParseDate(reservation.start_date));
-  const isEnd = hasReservation && isSameDay(day, safeParseDate(reservation.end_date));
   const today = startOfToday();
   const isPast = !hasReservation && onDayClick && isBefore(day, today);
   const reservationLength = hasReservation
@@ -210,8 +249,8 @@ const DayCell = ({ day, room, reservationsForRoom, onDayClick, onReservationSele
         color: hasReservation ? '#fff' : 'inherit',
         borderTopLeftRadius: isStart ? 6 : 0,
         borderBottomLeftRadius: isStart ? 6 : 0,
-        borderTopRightRadius: isEnd ? 6 : 0,
-        borderBottomRightRadius: isEnd ? 6 : 0,
+        borderTopRightRadius: hasReservation && isSameDay(day, safeParseDate(reservation.end_date)) ? 6 : 0,
+        borderBottomRightRadius: hasReservation && isSameDay(day, safeParseDate(reservation.end_date)) ? 6 : 0,
         transition: 'background-color 0.2s ease',
         '&:hover':
           !hasReservation && !isPast && onDayClick
@@ -222,15 +261,15 @@ const DayCell = ({ day, room, reservationsForRoom, onDayClick, onReservationSele
       }}
       onClick={handleClick}
     >
-      {hasReservation && isStart && (
-        <Typography
-          variant="caption"
-          sx={{
-            fontWeight: 600,
-            color: 'common.white',
-            textShadow: '0 1px 2px rgba(0,0,0,0.2)',
-            width: '100%',
-            textAlign: 'left',
+        {hasReservation && isStart && (
+          <Typography
+            variant="caption"
+            sx={{
+              fontWeight: 600,
+              color: 'common.white',
+              textShadow: '0 1px 2px rgba(0,0,0,0.2)',
+              width: '100%',
+              textAlign: 'left',
             pl: 0.5,
             pr: 0.5,
             whiteSpace: reservationLength <= 1 ? 'nowrap' : 'normal',
@@ -241,6 +280,166 @@ const DayCell = ({ day, room, reservationsForRoom, onDayClick, onReservationSele
           {`${reservation.name ?? ''} ${reservation.lastname ?? ''}`.trim()}
         </Typography>
       )}
+    </Box>
+  );
+};
+
+const MonthlyCalendar = ({
+  currentMonth,
+  onNavigate,
+  rooms,
+  activeRoomId,
+  onRoomChange,
+  reservations,
+  onDayClick,
+  onReservationSelect,
+}) => {
+  const today = startOfToday();
+  const days = useMemo(() => {
+    const start = startOfWeek(startOfMonth(currentMonth), { weekStartsOn: 1 });
+    return Array.from({ length: 42 }, (_, index) => addDays(start, index));
+  }, [currentMonth]);
+
+  const room = rooms.find((item) => item.id === activeRoomId) || rooms[0];
+  const reservationsForRoom = reservations.filter(
+    (reservation) => (reservation.room_id || reservation.room?.id) === room.id,
+  );
+
+  const weekChunks = useMemo(() => {
+    const chunked = [];
+    for (let i = 0; i < days.length; i += 7) {
+      chunked.push(days.slice(i, i + 7));
+    }
+    return chunked;
+  }, [days]);
+
+  const handleDayClick = (day) => {
+    if (isBefore(day, today)) return;
+    onDayClick?.(day, room);
+  };
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center">
+        <Box display="flex" alignItems="center" gap={1}>
+          <IconButton onClick={() => onNavigate('prev')} size="small">
+            <ArrowBackIos fontSize="inherit" />
+          </IconButton>
+          <Typography variant="h6">{format(currentMonth, 'MMMM yyyy')}</Typography>
+          <IconButton onClick={() => onNavigate('next')} size="small">
+            <ArrowForwardIos fontSize="inherit" />
+          </IconButton>
+        </Box>
+
+        <FormControl size="small" sx={{ minWidth: 200 }}>
+          <InputLabel id="calendar-room-select">Room</InputLabel>
+          <Select
+            labelId="calendar-room-select"
+            value={room.id}
+            label="Room"
+            onChange={(event) => onRoomChange?.(event.target.value)}
+          >
+            {rooms.map((item) => (
+              <MenuItem key={item.id} value={item.id}>
+                {item.propertyName ? `${item.propertyName} — ${item.name}` : item.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Stack>
+
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 0.5 }}>
+        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((label) => (
+          <Box key={label} sx={{ textAlign: 'center', fontWeight: 600, py: 0.75 }}>
+            <Typography variant="caption">{label}</Typography>
+          </Box>
+        ))}
+      </Box>
+
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+        {weekChunks.map((week, index) => (
+          <Box
+            key={index.toString()}
+            sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 0.5 }}
+          >
+            {week.map((day) => (
+              <MobileDayCell
+                key={day.toISOString()}
+                day={day}
+                reservations={reservationsForRoom}
+                currentMonth={currentMonth}
+                onClick={() => handleDayClick(day)}
+                onReservationSelect={onReservationSelect}
+              />
+            ))}
+          </Box>
+        ))}
+      </Box>
+    </Box>
+  );
+};
+
+const MobileDayCell = ({ day, reservations, currentMonth, onClick, onReservationSelect }) => {
+  const today = startOfToday();
+  const reservation = reservations.find((item) => {
+    const start = safeParseDate(item.start_date);
+    const end = safeParseDate(item.end_date);
+    if (!start || !end) return false;
+    return isWithinInterval(day, { start, end });
+  });
+
+  const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
+  const isPast = isBefore(day, today);
+  const hasReservation = Boolean(reservation);
+  const label = format(day, 'd');
+  const isStart = hasReservation && isSameDay(day, safeParseDate(reservation.start_date));
+
+  const handleClick = () => {
+    if (hasReservation) {
+      onReservationSelect?.(reservation);
+    } else if (!isPast) {
+      onClick?.();
+    }
+  };
+
+  return (
+    <Box
+      onClick={handleClick}
+      sx={{
+        minHeight: 60,
+        borderRadius: 1,
+        border: '1px solid',
+        borderColor: hasReservation ? 'primary.main' : 'grey.300',
+        backgroundColor: hasReservation ? 'primary.light' : 'background.paper',
+        color: isPast && !hasReservation ? 'text.disabled' : 'inherit',
+        opacity: isCurrentMonth ? 1 : 0.4,
+        p: 0.75,
+        cursor: hasReservation ? 'pointer' : isPast ? 'not-allowed' : 'pointer',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 0.5,
+      }}
+    >
+      <Typography variant="subtitle2" sx={{ fontSize: '0.9rem', fontWeight: 600 }}>
+        {label}
+      </Typography>
+      {hasReservation && (
+        <Typography
+          variant="caption"
+          sx={{
+            fontWeight: 600,
+            color: 'common.white',
+            backgroundColor: 'primary.main',
+            borderRadius: 0.5,
+            px: 0.5,
+            py: 0.25,
+        alignSelf: 'flex-start',
+        display: isStart ? 'inline-flex' : 'none',
+        }}
+      >
+        {`${reservation.name ?? ''} ${reservation.lastname ?? ''}`.trim()}
+      </Typography>
+    )}
     </Box>
   );
 };
