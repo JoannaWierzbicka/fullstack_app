@@ -38,7 +38,7 @@ export default function Layout() {
       <Box component="footer" sx={{ mt: 4, py: 2 }}>
         <Container maxWidth="lg">
           <Typography variant="body2" align="center">
-            &copy; {new Date().getFullYear()} Booking App
+            &copy; {new Date().getFullYear()} Kalendarro
           </Typography>
         </Container>
       </Box>
