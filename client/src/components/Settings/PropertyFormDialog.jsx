@@ -8,6 +8,7 @@ import {
   DialogTitle,
   TextField,
 } from '@mui/material';
+import { useLocale } from '../../context/LocaleContext.jsx';
 
 const EMPTY_FORM = {
   name: '',
@@ -18,6 +19,7 @@ export default function PropertyFormDialog({ open, onClose, onSubmit, initialVal
   const [formValues, setFormValues] = useState(EMPTY_FORM);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const { t } = useLocale();
 
   useEffect(() => {
     if (initialValues) {
@@ -41,7 +43,7 @@ export default function PropertyFormDialog({ open, onClose, onSubmit, initialVal
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!formValues.name.trim()) {
-      setError('Name is required.');
+      setError(t('propertyForm.errors.name'));
       return;
     }
 
@@ -54,7 +56,7 @@ export default function PropertyFormDialog({ open, onClose, onSubmit, initialVal
       });
       onClose();
     } catch (err) {
-      setError(err.message || 'Unable to save property.');
+      setError(err.message || t('propertyForm.errors.generic'));
     } finally {
       setIsSubmitting(false);
     }
@@ -62,12 +64,14 @@ export default function PropertyFormDialog({ open, onClose, onSubmit, initialVal
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{initialValues ? 'Edit Property' : 'Add Property'}</DialogTitle>
+      <DialogTitle>
+        {initialValues ? t('propertyForm.editTitle') : t('propertyForm.addTitle')}
+      </DialogTitle>
       <DialogContent dividers>
         <form onSubmit={handleSubmit}>
           <TextField
             margin="normal"
-            label="Name"
+            label={t('propertyForm.name')}
             name="name"
             fullWidth
             required
@@ -76,7 +80,7 @@ export default function PropertyFormDialog({ open, onClose, onSubmit, initialVal
           />
           <TextField
             margin="normal"
-            label="Description"
+            label={t('propertyForm.description')}
             name="description"
             fullWidth
             multiline
@@ -92,13 +96,13 @@ export default function PropertyFormDialog({ open, onClose, onSubmit, initialVal
         </form>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>{t('propertyForm.cancel')}</Button>
         <Button
           onClick={handleSubmit}
           variant="contained"
           disabled={isSubmitting}
         >
-          {isSubmitting ? 'Saving...' : 'Save'}
+          {isSubmitting ? t('propertyForm.saving') : t('propertyForm.save')}
         </Button>
       </DialogActions>
     </Dialog>

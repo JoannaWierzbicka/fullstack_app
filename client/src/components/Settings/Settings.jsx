@@ -30,6 +30,7 @@ import {
 } from '../../api/rooms.js';
 import PropertyFormDialog from './PropertyFormDialog.jsx';
 import RoomFormDialog from './RoomFormDialog.jsx';
+import { useLocale } from '../../context/LocaleContext.jsx';
 
 export default function Settings() {
   const [properties, setProperties] = useState([]);
@@ -43,6 +44,7 @@ export default function Settings() {
   const [roomDialogOpen, setRoomDialogOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState(null);
   const [editingRoom, setEditingRoom] = useState(null);
+  const { t } = useLocale();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -57,12 +59,12 @@ export default function Settings() {
       })
       .catch((err) => {
         if (err.name === 'AbortError') return;
-        setPropertiesError(err.message || 'Unable to load properties.');
+        setPropertiesError(err.message || t('dashboard.errors.properties'));
       })
       .finally(() => setLoading(false));
 
     return () => controller.abort();
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!selectedPropertyId) {
@@ -78,11 +80,11 @@ export default function Settings() {
       })
       .catch((err) => {
         if (err.name === 'AbortError') return;
-        setRoomsError(err.message || 'Unable to load rooms.');
+        setRoomsError(err.message || t('dashboard.errors.rooms'));
       });
 
     return () => controller.abort();
-  }, [selectedPropertyId]);
+  }, [selectedPropertyId, t]);
 
   const selectedProperty = useMemo(
     () => properties.find((property) => property.id === selectedPropertyId) ?? null,
@@ -104,7 +106,7 @@ export default function Settings() {
   };
 
   const handleDeleteProperty = async (id) => {
-    if (!window.confirm('Delete this property?')) return;
+    if (!window.confirm(t('settings.deletePropertyConfirm'))) return;
     await deleteProperty(id);
     setProperties((prev) => {
       const next = prev.filter((item) => item.id !== id);
@@ -138,11 +140,19 @@ export default function Settings() {
   };
 
   const handleDeleteRoom = async (id) => {
-    if (!window.confirm('Delete this room?')) return;
+    if (!window.confirm(t('settings.deleteRoomConfirm'))) return;
     await deleteRoom(id);
     setRooms((prev) => prev.filter((room) => room.id !== id));
     setRoomsError(null);
   };
+
+  const roomsHeading = useMemo(
+    () =>
+      selectedProperty
+        ? t('settings.roomsTitle', { name: selectedProperty.name })
+        : t('settings.roomsTitle', { name: t('settings.selectPropertyFallback') }),
+    [selectedProperty, t],
+  );
 
   return (
     <Box>
@@ -156,7 +166,7 @@ export default function Settings() {
         <Card sx={{ flex: '1 1 320px' }}>
           <CardContent>
             <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-              <Typography variant="h6">Properties</Typography>
+              <Typography variant="h6">{t('settings.propertiesTitle')}</Typography>
               <Button
                 startIcon={<Add />}
                 variant="contained"
@@ -165,12 +175,12 @@ export default function Settings() {
                   setPropertyDialogOpen(true);
                 }}
               >
-                Add Property
+                {t('settings.addProperty')}
               </Button>
             </Stack>
 
             {loading ? (
-              <Typography variant="body2">Loading...</Typography>
+              <Typography variant="body2">{t('settings.loading')}</Typography>
             ) : propertiesError ? (
               <Alert severity="error">{propertiesError}</Alert>
             ) : (
@@ -183,7 +193,7 @@ export default function Settings() {
                       <Stack direction="row" spacing={1}>
                         <IconButton
                           edge="end"
-                          aria-label="edit"
+                          aria-label={t('reservationCard.actions.edit')}
                           onClick={() => {
                             setEditingProperty(property);
                             setPropertyDialogOpen(true);
@@ -193,7 +203,7 @@ export default function Settings() {
                         </IconButton>
                         <IconButton
                           edge="end"
-                          aria-label="delete"
+                          aria-label={t('reservationCard.actions.delete')}
                           onClick={() => handleDeleteProperty(property.id)}
                         >
                           <Delete fontSize="small" />
@@ -216,7 +226,7 @@ export default function Settings() {
 
                 {properties.length === 0 && (
                   <Typography variant="body2" color="text.secondary">
-                    You have not added any properties yet.
+                    {t('settings.emptyProperties')}
                   </Typography>
                 )}
               </List>
@@ -227,9 +237,7 @@ export default function Settings() {
         <Card sx={{ flex: '2 1 480px' }}>
           <CardContent>
             <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-              <Typography variant="h6">
-                Rooms {selectedProperty ? `— ${selectedProperty.name}` : ''}
-              </Typography>
+              <Typography variant="h6">{roomsHeading}</Typography>
               <Button
                 startIcon={<Add />}
                 variant="contained"
@@ -239,19 +247,19 @@ export default function Settings() {
                 }}
                 disabled={!selectedProperty || properties.length === 0}
               >
-                Add Room
+                {t('roomForm.addTitle')}
               </Button>
             </Stack>
 
             {!selectedProperty ? (
               <Typography variant="body2" color="text.secondary">
-                Select a property to manage its rooms.
+                {t('settings.selectPropertyHint')}
               </Typography>
             ) : roomsError ? (
               <Alert severity="error">{roomsError}</Alert>
             ) : rooms.length === 0 ? (
               <Typography variant="body2" color="text.secondary">
-                No rooms yet. Add your first room to start assigning reservations.
+                {t('settings.emptyRooms')}
               </Typography>
             ) : (
               <List disablePadding>
@@ -261,24 +269,24 @@ export default function Settings() {
                       disablePadding
                       secondaryAction={
                         <Stack direction="row" spacing={1}>
-                          <IconButton
-                            edge="end"
-                            aria-label="edit"
-                            onClick={() => {
-                              setEditingRoom(room);
-                              setRoomDialogOpen(true);
-                            }}
-                          >
+                        <IconButton
+                          edge="end"
+                          aria-label={t('reservationCard.actions.edit')}
+                          onClick={() => {
+                            setEditingRoom(room);
+                            setRoomDialogOpen(true);
+                          }}
+                        >
                             <Edit fontSize="small" />
                           </IconButton>
-                          <IconButton
-                            edge="end"
-                            aria-label="delete"
-                            onClick={() => handleDeleteRoom(room.id)}
-                          >
-                            <Delete fontSize="small" />
-                          </IconButton>
-                        </Stack>
+                        <IconButton
+                          edge="end"
+                          aria-label={t('reservationCard.actions.delete')}
+                          onClick={() => handleDeleteRoom(room.id)}
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      </Stack>
                       }
                     >
                       <ListItemText
@@ -294,7 +302,7 @@ export default function Settings() {
           </CardContent>
           <CardActions>
             <Typography variant="caption" color="text.secondary">
-              Rooms defined here will appear in your reservation forms.
+              {t('settings.roomsInfo')}
             </Typography>
           </CardActions>
         </Card>

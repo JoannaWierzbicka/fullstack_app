@@ -1,18 +1,6 @@
 import { createHttpError } from '../utils/httpError.js';
 
-const REQUIRED_FIELDS = new Set([
-  'name',
-  'lastname',
-  'phone',
-  'mail',
-  'start_date',
-  'end_date',
-  'property_id',
-  'room_id',
-  'price',
-  'adults',
-  'children',
-]);
+const REQUIRED_FIELDS = new Set(['name', 'lastname', 'start_date', 'end_date', 'property_id', 'room_id']);
 
 const toNumber = (value, field) => {
   const parsed = Number(value);
@@ -30,7 +18,11 @@ export const validateReservationPayload = (payload) => {
   const missing = [];
   REQUIRED_FIELDS.forEach((field) => {
     const value = payload[field];
-    if (value === undefined || value === null || value === '') {
+    if (value === undefined || value === null) {
+      missing.push(field);
+      return;
+    }
+    if (typeof value === 'string' && value.trim() === '') {
       missing.push(field);
     }
   });
@@ -50,17 +42,30 @@ export const validateReservationPayload = (payload) => {
     throw createHttpError(400, 'End date cannot be earlier than the start date.');
   }
 
+  const normalizeString = (value) => {
+    if (value === undefined || value === null) return null;
+    const trimmed = String(value).trim();
+    return trimmed.length === 0 ? null : trimmed;
+  };
+
+  const normalizeNumber = (value, field) => {
+    if (value === undefined || value === null || value === '') {
+      return null;
+    }
+    return toNumber(value, field);
+  };
+
   return {
     name: String(payload.name).trim(),
     lastname: String(payload.lastname).trim(),
-    phone: String(payload.phone).trim(),
-    mail: String(payload.mail).trim(),
+    phone: normalizeString(payload.phone),
+    mail: normalizeString(payload.mail),
     start_date: payload.start_date,
     end_date: payload.end_date,
     property_id: String(payload.property_id),
     room_id: String(payload.room_id),
-    price: toNumber(payload.price, 'price'),
-    adults: toNumber(payload.adults, 'adults'),
-    children: toNumber(payload.children, 'children'),
+    price: normalizeNumber(payload.price, 'price'),
+    adults: normalizeNumber(payload.adults, 'adults'),
+    children: normalizeNumber(payload.children, 'children'),
   };
 };

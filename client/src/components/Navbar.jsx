@@ -3,10 +3,14 @@ import { AppBar, Toolbar, Typography, Button, Stack } from '@mui/material';
 import FilterHdrIcon from '@mui/icons-material/FilterHdr';
 import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useLocale } from '../context/LocaleContext.jsx';
 
 export default function Navbar() {
     const { user, isAuthenticated, logout, isLoggingOut } = useAuth();
+    const { t, language, setLanguage } = useLocale();
     const userLabel = user?.email || user?.phone || null;
+    const toggleLanguage = () => setLanguage(language === 'en' ? 'pl' : 'en');
+    const languageLabel = language === 'en' ? 'PL' : 'EN';
 
     return (
         <AppBar
@@ -45,7 +49,7 @@ export default function Navbar() {
                                     },
                                 }}
                             >
-                                All Reservations
+                                {t('navbar.allReservations')}
                             </Button>
 
                             <Button
@@ -60,7 +64,7 @@ export default function Navbar() {
                                     },
                                 }}
                             >
-                                Add New Reservation
+                                {t('navbar.addReservation')}
                             </Button>
 
                             <Button
@@ -75,7 +79,16 @@ export default function Navbar() {
                                     },
                                 }}
                             >
-                                Settings
+                                {t('navbar.settings')}
+                            </Button>
+
+                            <Button
+                                variant="outlined"
+                                color="inherit"
+                                onClick={toggleLanguage}
+                                aria-label={t('navbar.language')}
+                            >
+                                {languageLabel}
                             </Button>
 
                             <Button
@@ -84,13 +97,21 @@ export default function Navbar() {
                                 onClick={logout}
                                 disabled={isLoggingOut}
                             >
-                                {isLoggingOut ? 'Logging out...' : 'Logout'}
+                                {isLoggingOut ? t('navbar.loggingOut') : t('navbar.logout')}
                             </Button>
                         </>
                     ) : (
                         <>
-                            <Button color="inherit" component={Link} to="/login">Log In</Button>
-                            <Button color="inherit" component={Link} to="/register">Register</Button>
+                            <Button color="inherit" component={Link} to="/login">{t('navbar.login')}</Button>
+                            <Button color="inherit" component={Link} to="/register">{t('navbar.register')}</Button>
+                            <Button
+                                variant="outlined"
+                                color="inherit"
+                                onClick={toggleLanguage}
+                                aria-label={t('navbar.language')}
+                            >
+                                {languageLabel}
+                            </Button>
                         </>
                     )}
                 </Stack>

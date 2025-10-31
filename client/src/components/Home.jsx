@@ -2,9 +2,11 @@ import React from 'react';
 import { Box, Button, Stack, Typography } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useLocale } from '../context/LocaleContext.jsx';
 
 export default function Home() {
   const { isAuthenticated } = useAuth();
+  const { t } = useLocale();
 
   return (
     <Box
@@ -23,24 +25,23 @@ export default function Home() {
       }}
     >
       <Typography variant="h3" component="h1" gutterBottom>
-        Manage your bookings like a pro
+        {t('home.heroTitle')}
       </Typography>
       <Typography variant="body1" color="text.secondary">
-        A dedicated workspace for property owners to organise reservations, track availability, and
-        keep every guest stay under control.
+        {t('home.heroSubtitle')}
       </Typography>
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
         {isAuthenticated ? (
           <Button component={RouterLink} to="/dashboard" variant="contained" size="large">
-            Go to dashboard
+            {t('home.goToDashboard')}
           </Button>
         ) : (
           <>
             <Button component={RouterLink} to="/login" variant="contained" size="large">
-              Log in
+              {t('home.login')}
             </Button>
             <Button component={RouterLink} to="/register" variant="outlined" size="large">
-              Create account
+              {t('home.createAccount')}
             </Button>
           </>
         )}

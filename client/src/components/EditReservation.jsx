@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLoaderData, useNavigate } from 'react-router-dom';
 import ReservationFormDialog from './ReservationFormDialog.jsx';
-import { updateReservation } from '../api/reservations.js';
+import { updateReservation, loadReservations } from '../api/reservations.js';
 import { fetchProperties } from '../api/properties.js';
 import { fetchRooms } from '../api/rooms.js';
+import { useLocale } from '../context/LocaleContext.jsx';
 
 function EditReservation() {
   const reservation = useLoaderData();
@@ -14,6 +15,9 @@ function EditReservation() {
   const [loadingProperties, setLoadingProperties] = useState(true);
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [error, setError] = useState(null);
+  const [reservationsData, setReservationsData] = useState([]);
+  const [reservationsError, setReservationsError] = useState(null);
+  const { t } = useLocale();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -32,18 +36,20 @@ function EditReservation() {
       })
       .catch((err) => {
         if (err.name === 'AbortError') return;
-        setError(err.message || 'Unable to load properties.');
+        setError(err.message || t('dashboard.errors.properties'));
       })
       .finally(() => setLoadingProperties(false));
 
     return () => controller.abort();
-  }, [reservation?.property_id]);
+  }, [reservation?.property_id, t]);
 
   useEffect(() => {
     const propertyId = selectedPropertyId || reservation?.property_id;
     if (!propertyId) {
       setRooms([]);
       setError(null);
+      setReservationsData([]);
+      setReservationsError(null);
       return undefined;
     }
 
@@ -56,12 +62,38 @@ function EditReservation() {
       })
       .catch((err) => {
         if (err.name === 'AbortError') return;
-        setError(err.message || 'Unable to load rooms.');
+        setError(err.message || t('dashboard.errors.rooms'));
       })
       .finally(() => setLoadingRooms(false));
 
     return () => controller.abort();
-  }, [reservation?.property_id, selectedPropertyId]);
+  }, [reservation?.property_id, selectedPropertyId, t]);
+
+  useEffect(() => {
+    const propertyId = selectedPropertyId || reservation?.property_id;
+    if (!propertyId) {
+      setReservationsData([]);
+      setReservationsError(null);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    setReservationsData([]);
+    loadReservations({
+      signal: controller.signal,
+      filters: { property_id: propertyId },
+    })
+      .then((data) => {
+        setReservationsData(data);
+        setReservationsError(null);
+      })
+      .catch((err) => {
+        if (err.name === 'AbortError') return;
+        setReservationsError(err.message || t('dashboard.errors.reservations'));
+      });
+
+    return () => controller.abort();
+  }, [reservation?.property_id, selectedPropertyId, t]);
 
   const initialValues = useMemo(() => ({
     ...reservation,
@@ -81,10 +113,10 @@ function EditReservation() {
 
   return (
     <ReservationFormDialog
-      title="Edit Reservation"
+      title={t('reservationForm.editTitle')}
       initialValues={initialValues}
-      submitLabel="Save Changes"
-      submittingLabel="Saving..."
+      submitLabel={t('reservationForm.submitSave')}
+      submittingLabel={t('reservationForm.submitSaving')}
       onSubmit={handleSubmit}
       onCancel={handleCancel}
       properties={properties}
@@ -92,7 +124,9 @@ function EditReservation() {
       onPropertyChange={setSelectedPropertyId}
       loadingProperties={loadingProperties}
       loadingRooms={loadingRooms}
-      dataError={error}
+      dataError={error || reservationsError}
+      existingReservations={reservationsData}
+      reservationId={reservation?.id}
     />
   );
 }

@@ -27,6 +27,7 @@ import {
   startOfToday,
   startOfWeek,
 } from 'date-fns';
+import { useLocale } from '../context/LocaleContext.jsx';
 
 const safeParseDate = (value) => {
   if (!value) return null;
@@ -44,7 +45,12 @@ const ReservationCalendar = ({
 }) => {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
+  const { t, language, dateLocale } = useLocale();
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const weekdayLabels = useMemo(() => {
+    const labels = t('calendar.weekdays');
+    return Array.isArray(labels) ? labels : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  }, [t, language]);
 
   const daysInMonth = useMemo(() => {
     const start = startOfMonth(currentMonth);
@@ -63,8 +69,8 @@ const ReservationCalendar = ({
       if (!map.has(roomId)) {
         map.set(roomId, {
           id: roomId,
-          name: reservation.room?.name || 'Unnamed room',
-          propertyName: reservation.property?.name || 'Property',
+          name: reservation.room?.name || t('reservationCard.room'),
+          propertyName: reservation.property?.name || t('reservationCard.property'),
         });
       }
     });
@@ -74,7 +80,7 @@ const ReservationCalendar = ({
       }
       return a.propertyName.localeCompare(b.propertyName);
     });
-  }, [providedRooms, reservations]);
+  }, [providedRooms, reservations, t]);
 
   const getReservationsForRoom = (roomId) =>
     reservations.filter((reservation) => (reservation.room_id || reservation.room?.id) === roomId);
@@ -83,7 +89,7 @@ const ReservationCalendar = ({
     return (
       <Box sx={{ p: 2, border: '1px dashed', borderColor: 'grey.300', borderRadius: 1 }}>
         <Typography variant="body2" color="text.secondary">
-          No rooms available. Add rooms in Settings to see availability.
+          {t('calendar.noRooms')}
         </Typography>
       </Box>
     );
@@ -102,6 +108,11 @@ const ReservationCalendar = ({
         reservations={reservations}
         onDayClick={onDayClick}
         onReservationSelect={onReservationSelect}
+        weekdays={weekdayLabels}
+        instructions={t('calendar.mobileHint')}
+        roomLabel={t('navbar.roomSelector')}
+        dateLocale={dateLocale}
+        t={t}
       />
     );
   }
@@ -112,7 +123,9 @@ const ReservationCalendar = ({
         <IconButton onClick={() => setCurrentMonth((prev) => addMonths(prev, -1))}>
           <ArrowBackIos fontSize="small" />
         </IconButton>
-        <Typography variant="h6">{format(currentMonth, 'MMMM yyyy')}</Typography>
+        <Typography variant="h6">
+          {format(currentMonth, 'LLLL yyyy', { locale: dateLocale })}
+        </Typography>
         <IconButton onClick={() => setCurrentMonth((prev) => addMonths(prev, 1))}>
           <ArrowForwardIos fontSize="small" />
         </IconButton>
@@ -142,7 +155,7 @@ const ReservationCalendar = ({
             fontWeight: 600,
           }}
         >
-          <Typography variant="subtitle2">Room</Typography>
+          <Typography variant="subtitle2">{t('calendar.room')}</Typography>
         </Box>
         {daysInMonth.map((day) => (
           <Box
@@ -158,7 +171,9 @@ const ReservationCalendar = ({
               justifyContent: 'center',
             }}
           >
-            <Typography variant="caption">{format(day, 'd')}</Typography>
+            <Typography variant="caption">
+              {format(day, 'd', { locale: dateLocale })}
+            </Typography>
           </Box>
         ))}
 
@@ -261,15 +276,15 @@ const DayCell = ({ day, room, reservationsForRoom, onDayClick, onReservationSele
       }}
       onClick={handleClick}
     >
-        {hasReservation && isStart && (
-          <Typography
-            variant="caption"
-            sx={{
-              fontWeight: 600,
-              color: 'common.white',
-              textShadow: '0 1px 2px rgba(0,0,0,0.2)',
-              width: '100%',
-              textAlign: 'left',
+      {hasReservation && isStart && (
+        <Typography
+          variant="caption"
+          sx={{
+            fontWeight: 600,
+            color: 'common.white',
+            textShadow: '0 1px 2px rgba(0,0,0,0.2)',
+            width: '100%',
+            textAlign: 'left',
             pl: 0.5,
             pr: 0.5,
             whiteSpace: reservationLength <= 1 ? 'nowrap' : 'normal',
@@ -293,6 +308,11 @@ const MonthlyCalendar = ({
   reservations,
   onDayClick,
   onReservationSelect,
+  weekdays,
+  instructions,
+  roomLabel,
+  dateLocale,
+  t,
 }) => {
   const today = startOfToday();
   const days = useMemo(() => {
@@ -318,6 +338,8 @@ const MonthlyCalendar = ({
     onDayClick?.(day, room);
   };
 
+  const resolvedRoomLabel = roomLabel || t('calendar.room');
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -325,18 +347,20 @@ const MonthlyCalendar = ({
           <IconButton onClick={() => onNavigate('prev')} size="small">
             <ArrowBackIos fontSize="inherit" />
           </IconButton>
-          <Typography variant="h6">{format(currentMonth, 'MMMM yyyy')}</Typography>
+          <Typography variant="h6">
+            {format(currentMonth, 'LLLL yyyy', { locale: dateLocale })}
+          </Typography>
           <IconButton onClick={() => onNavigate('next')} size="small">
             <ArrowForwardIos fontSize="inherit" />
           </IconButton>
         </Box>
 
         <FormControl size="small" sx={{ minWidth: 200 }}>
-          <InputLabel id="calendar-room-select">Room</InputLabel>
+          <InputLabel id="calendar-room-select">{resolvedRoomLabel}</InputLabel>
           <Select
             labelId="calendar-room-select"
             value={room.id}
-            label="Room"
+            label={resolvedRoomLabel}
             onChange={(event) => onRoomChange?.(event.target.value)}
           >
             {rooms.map((item) => (
@@ -348,8 +372,14 @@ const MonthlyCalendar = ({
         </FormControl>
       </Stack>
 
+      {instructions && (
+        <Typography variant="caption" color="text.secondary">
+          {instructions}
+        </Typography>
+      )}
+
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 0.5 }}>
-        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((label) => (
+        {(weekdays || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']).map((label) => (
           <Box key={label} sx={{ textAlign: 'center', fontWeight: 600, py: 0.75 }}>
             <Typography variant="caption">{label}</Typography>
           </Box>
@@ -370,6 +400,7 @@ const MonthlyCalendar = ({
                 currentMonth={currentMonth}
                 onClick={() => handleDayClick(day)}
                 onReservationSelect={onReservationSelect}
+                dateLocale={dateLocale}
               />
             ))}
           </Box>
@@ -379,7 +410,14 @@ const MonthlyCalendar = ({
   );
 };
 
-const MobileDayCell = ({ day, reservations, currentMonth, onClick, onReservationSelect }) => {
+const MobileDayCell = ({
+  day,
+  reservations,
+  currentMonth,
+  onClick,
+  onReservationSelect,
+  dateLocale,
+}) => {
   const today = startOfToday();
   const reservation = reservations.find((item) => {
     const start = safeParseDate(item.start_date);
@@ -391,7 +429,7 @@ const MobileDayCell = ({ day, reservations, currentMonth, onClick, onReservation
   const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
   const isPast = isBefore(day, today);
   const hasReservation = Boolean(reservation);
-  const label = format(day, 'd');
+  const label = format(day, 'd', { locale: dateLocale });
   const isStart = hasReservation && isSameDay(day, safeParseDate(reservation.start_date));
 
   const handleClick = () => {
@@ -433,13 +471,13 @@ const MobileDayCell = ({ day, reservations, currentMonth, onClick, onReservation
             borderRadius: 0.5,
             px: 0.5,
             py: 0.25,
-        alignSelf: 'flex-start',
-        display: isStart ? 'inline-flex' : 'none',
-        }}
-      >
-        {`${reservation.name ?? ''} ${reservation.lastname ?? ''}`.trim()}
-      </Typography>
-    )}
+            alignSelf: 'flex-start',
+            display: isStart ? 'inline-flex' : 'none',
+          }}
+        >
+          {`${reservation.name ?? ''} ${reservation.lastname ?? ''}`.trim()}
+        </Typography>
+      )}
     </Box>
   );
 };

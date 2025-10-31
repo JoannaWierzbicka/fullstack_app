@@ -12,6 +12,7 @@ import {
   InputLabel,
   Select,
 } from '@mui/material';
+import { useLocale } from '../../context/LocaleContext.jsx';
 
 const EMPTY_FORM = {
   property_id: '',
@@ -23,11 +24,12 @@ export default function RoomFormDialog({
   onClose,
   onSubmit,
   initialValues,
-  properties,
+  properties = [],
 }) {
   const [formValues, setFormValues] = useState(EMPTY_FORM);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const { t } = useLocale();
 
   useEffect(() => {
     if (initialValues) {
@@ -51,11 +53,11 @@ export default function RoomFormDialog({
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!formValues.property_id) {
-      setError('Property is required.');
+      setError(t('roomForm.errors.property'));
       return;
     }
     if (!formValues.name.trim()) {
-      setError('Room name is required.');
+      setError(t('roomForm.errors.name'));
       return;
     }
 
@@ -69,7 +71,7 @@ export default function RoomFormDialog({
       });
       onClose();
     } catch (err) {
-      setError(err.message || 'Unable to save room.');
+      setError(err.message || t('roomForm.errors.generic'));
     } finally {
       setIsSubmitting(false);
     }
@@ -77,16 +79,18 @@ export default function RoomFormDialog({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{initialValues ? 'Edit Room' : 'Add Room'}</DialogTitle>
+      <DialogTitle>
+        {initialValues ? t('roomForm.editTitle') : t('roomForm.addTitle')}
+      </DialogTitle>
       <DialogContent dividers>
         <form onSubmit={handleSubmit}>
           <FormControl fullWidth margin="normal" required>
-            <InputLabel id="room-property-label">Property</InputLabel>
+            <InputLabel id="room-property-label">{t('roomForm.property')}</InputLabel>
             <Select
               labelId="room-property-label"
               name="property_id"
               value={formValues.property_id}
-              label="Property"
+              label={t('roomForm.property')}
               onChange={handleChange}
               disabled={Boolean(initialValues)}
             >
@@ -100,7 +104,7 @@ export default function RoomFormDialog({
 
           <TextField
             margin="normal"
-            label="Room name / number"
+            label={t('roomForm.name')}
             name="name"
             fullWidth
             required
@@ -116,13 +120,13 @@ export default function RoomFormDialog({
         </form>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>{t('roomForm.cancel')}</Button>
         <Button
           onClick={handleSubmit}
           variant="contained"
           disabled={isSubmitting || properties.length === 0}
         >
-          {isSubmitting ? 'Saving...' : 'Save'}
+          {isSubmitting ? t('roomForm.saving') : t('roomForm.save')}
         </Button>
       </DialogActions>
     </Dialog>

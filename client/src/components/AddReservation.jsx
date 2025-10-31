@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReservationFormDialog from './ReservationFormDialog.jsx';
-import { createReservation } from '../api/reservations.js';
+import { createReservation, loadReservations } from '../api/reservations.js';
 import { fetchProperties } from '../api/properties.js';
 import { fetchRooms } from '../api/rooms.js';
 import { addDays, format, startOfToday } from 'date-fns';
+import { useLocale } from '../context/LocaleContext.jsx';
 
 const formatDateInput = (date) => format(date, 'yyyy-MM-dd');
 
@@ -16,6 +17,9 @@ function AddReservation() {
   const [loadingProperties, setLoadingProperties] = useState(true);
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [error, setError] = useState(null);
+  const [reservations, setReservations] = useState([]);
+  const [reservationsError, setReservationsError] = useState(null);
+  const { t } = useLocale();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -30,17 +34,19 @@ function AddReservation() {
       })
       .catch((err) => {
         if (err.name === 'AbortError') return;
-        setError(err.message || 'Unable to load properties.');
+        setError(err.message || t('dashboard.errors.properties'));
       })
       .finally(() => setLoadingProperties(false));
 
     return () => controller.abort();
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!selectedPropertyId) {
       setRooms([]);
       setError(null);
+      setReservations([]);
+      setReservationsError(null);
       return undefined;
     }
 
@@ -53,12 +59,37 @@ function AddReservation() {
       })
       .catch((err) => {
         if (err.name === 'AbortError') return;
-        setError(err.message || 'Unable to load rooms.');
+        setError(err.message || t('dashboard.errors.rooms'));
       })
       .finally(() => setLoadingRooms(false));
 
     return () => controller.abort();
-  }, [selectedPropertyId]);
+  }, [selectedPropertyId, t]);
+
+  useEffect(() => {
+    if (!selectedPropertyId) {
+      setReservations([]);
+      setReservationsError(null);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    setReservations([]);
+    loadReservations({
+      signal: controller.signal,
+      filters: { property_id: selectedPropertyId },
+    })
+      .then((data) => {
+        setReservations(data);
+        setReservationsError(null);
+      })
+      .catch((err) => {
+        if (err.name === 'AbortError') return;
+        setReservationsError(err.message || t('dashboard.errors.reservations'));
+      });
+
+    return () => controller.abort();
+  }, [selectedPropertyId, t]);
 
   const initialValues = useMemo(() => {
     const today = startOfToday();
@@ -78,10 +109,10 @@ function AddReservation() {
 
   return (
     <ReservationFormDialog
-      title="Add New Reservation"
+      title={t('reservationForm.addTitle')}
       initialValues={initialValues}
-      submitLabel="Create"
-      submittingLabel="Creating..."
+      submitLabel={t('reservationForm.submitCreate')}
+      submittingLabel={t('reservationForm.submitCreating')}
       onSubmit={handleSubmit}
       onCancel={handleCancel}
       properties={properties}
@@ -89,8 +120,9 @@ function AddReservation() {
       onPropertyChange={setSelectedPropertyId}
       loadingProperties={loadingProperties}
       loadingRooms={loadingRooms}
-      dataError={error}
+      dataError={error || reservationsError}
       minDate={formatDateInput(startOfToday())}
+      existingReservations={reservations}
     />
   );
 }

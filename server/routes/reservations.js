@@ -99,6 +99,13 @@ router.post(
 
     const { property, room } = await ensureOwnership(ownerId, reservation.property_id, reservation.room_id);
 
+    await ensureRoomAvailability({
+      ownerId,
+      roomId: room.id,
+      startDate: reservation.start_date,
+      endDate: reservation.end_date,
+    });
+
     const insertPayload = {
       ...reservation,
       property_id: property.id,
@@ -141,6 +148,14 @@ router.put(
     await ensureOwnership(ownerId, reservation.property_id, reservation.room_id);
 
     const { property, room } = await ensureOwnership(ownerId, reservation.property_id, reservation.room_id);
+
+    await ensureRoomAvailability({
+      ownerId,
+      roomId: room.id,
+      startDate: reservation.start_date,
+      endDate: reservation.end_date,
+      excludeReservationId: id,
+    });
 
     const updatePayload = {
       ...reservation,
@@ -253,4 +268,32 @@ async function ensureOwnership(ownerId, propertyId, roomId) {
   }
 
   return { property, room };
+}
+
+async function ensureRoomAvailability({ ownerId, roomId, startDate, endDate, excludeReservationId }) {
+  if (!roomId || !startDate || !endDate) {
+    return;
+  }
+
+  let query = supabase
+    .from('reservations')
+    .select('id, start_date, end_date')
+    .eq('owner_id', ownerId)
+    .eq('room_id', roomId)
+    .lte('start_date', endDate)
+    .gte('end_date', startDate);
+
+  if (excludeReservationId) {
+    query = query.neq('id', excludeReservationId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw mapSupabaseError(error);
+  }
+
+  if (Array.isArray(data) && data.length > 0) {
+    throw createHttpError(409, 'Room is already booked for the selected dates.');
+  }
 }
