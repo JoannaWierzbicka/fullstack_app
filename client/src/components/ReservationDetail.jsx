@@ -1,5 +1,5 @@
+import { useMemo, useState, useCallback } from 'react';
 import { Link, useLoaderData, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
 import { deleteReservation } from '../api/reservations.js';
 import {
   Box,
@@ -12,32 +12,43 @@ import {
 } from '@mui/material';
 import { format } from 'date-fns';
 import { FaArrowLeft, FaTrashAlt } from 'react-icons/fa';
-
-const formatDate = (value) => {
-  const date = value ? new Date(value) : null;
-  return date && !Number.isNaN(date.getTime()) ? format(date, 'd MMM yyyy') : '—';
-};
-
-const numberFormatter = new Intl.NumberFormat('pl-PL', {
-  style: 'currency',
-  currency: 'PLN',
-  maximumFractionDigits: 2,
-});
+import { useLocale } from '../context/LocaleContext.jsx';
 
 function ReservationDetail() {
   const reservation = useLoaderData() ?? {};
   const navigate = useNavigate();
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState(null);
+  const { t, language, dateLocale } = useLocale();
+
+  const formatDate = useCallback(
+    (value) => {
+      const date = value ? new Date(value) : null;
+      return date && !Number.isNaN(date.getTime())
+        ? format(date, 'd MMM yyyy', { locale: dateLocale })
+        : '—';
+    },
+    [dateLocale],
+  );
+
+  const numberFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat(language === 'pl' ? 'pl-PL' : 'en-US', {
+        style: 'currency',
+        currency: 'PLN',
+        maximumFractionDigits: 2,
+      }),
+    [language],
+  );
 
   const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this reservation?')) {
+    if (window.confirm(t('reservationDetail.deleteConfirm'))) {
       setIsDeleting(true);
       try {
         await deleteReservation(reservation.id);
         navigate('/dashboard');
       } catch (err) {
-        setError(err.message || 'Failed to delete.');
+        setError(err.message || t('reservationDetail.deleteError'));
         setIsDeleting(false);
       }
     }
@@ -47,11 +58,11 @@ function ReservationDetail() {
     <Container maxWidth="sm" sx={{ mt: 4 }}>
       <Paper elevation={3} sx={{ p: 3 }}>
         <Typography variant="h5" gutterBottom>
-          Reservation Details
+          {t('reservationDetail.title')}
         </Typography>
 
         {!reservation?.id && (
-          <AlertMessage message="Reservation could not be found." />
+          <AlertMessage message={t('reservationDetail.notFound')} />
         )}
 
         {error && (
@@ -62,25 +73,25 @@ function ReservationDetail() {
 
         <Stack spacing={1}>
           <DetailItem
-            label="Name"
+            label={t('reservationDetail.name')}
             value={[reservation.name, reservation.lastname].filter(Boolean).join(' ') || '—'}
           />
-          <DetailItem label="Phone" value={reservation.phone || '—'} />
-          <DetailItem label="Email" value={reservation.mail || '—'} />
-          <DetailItem label="Property" value={reservation.property?.name || '—'} />
-          <DetailItem label="Room" value={reservation.room?.name || '—'} />
+          <DetailItem label={t('reservationDetail.phone')} value={reservation.phone || '—'} />
+          <DetailItem label={t('reservationDetail.email')} value={reservation.mail || '—'} />
+          <DetailItem label={t('reservationDetail.property')} value={reservation.property?.name || '—'} />
+          <DetailItem label={t('reservationDetail.room')} value={reservation.room?.name || '—'} />
           <DetailItem
-            label="Price"
+            label={t('reservationDetail.price')}
             value={
               reservation.price !== undefined
                 ? numberFormatter.format(Number(reservation.price))
                 : '—'
             }
           />
-          <DetailItem label="From" value={formatDate(reservation.start_date)} />
-          <DetailItem label="To" value={formatDate(reservation.end_date)} />
-          <DetailItem label="Adults" value={reservation.adults ?? '—'} />
-          <DetailItem label="Children" value={reservation.children ?? '—'} />
+          <DetailItem label={t('reservationDetail.from')} value={formatDate(reservation.start_date)} />
+          <DetailItem label={t('reservationDetail.to')} value={formatDate(reservation.end_date)} />
+          <DetailItem label={t('reservationDetail.adults')} value={reservation.adults ?? '—'} />
+          <DetailItem label={t('reservationDetail.children')} value={reservation.children ?? '—'} />
         </Stack>
 
         <Divider sx={{ my: 3 }} />
@@ -93,7 +104,7 @@ function ReservationDetail() {
             to="/dashboard"
             startIcon={<FaArrowLeft />}
           >
-            Back
+            {t('reservationDetail.back')}
           </Button>
           <Button
             variant="contained"
@@ -102,7 +113,7 @@ function ReservationDetail() {
             disabled={isDeleting}
             startIcon={<FaTrashAlt />}
           >
-            {isDeleting ? 'Deleting...' : 'Delete'}
+            {isDeleting ? t('reservationDetail.deleting') : t('reservationDetail.delete')}
           </Button>
         </Stack>
       </Paper>

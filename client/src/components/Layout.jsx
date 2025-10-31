@@ -8,11 +8,13 @@ import {
   Snackbar,
   Typography,
 } from '@mui/material';
+import { useLocale } from '../context/LocaleContext.jsx';
 
 export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [flash, setFlash] = useState(null);
+  const { t } = useLocale();
 
   useEffect(() => {
     const flashMessage = location.state?.flash;
@@ -30,15 +32,26 @@ export default function Layout() {
   return (
     <>
       <Navbar />
-      <Box component="main" sx={{ pt: 4, pb: 4 }}>
-        <Container maxWidth="lg">
+      <Box
+        component="main"
+        sx={{
+          pt: { xs: 6, sm: 7, md: 8 },
+          pb: { xs: 8, md: 10 },
+        }}
+      >
+        <Container
+          maxWidth="lg"
+          sx={{
+            px: { xs: 2, sm: 3, md: 4 },
+          }}
+        >
           <Outlet />
         </Container>
       </Box>
-      <Box component="footer" sx={{ mt: 4, py: 2 }}>
-        <Container maxWidth="lg">
+      <Box component="footer" sx={{ mt: { xs: 6, md: 8 }, py: { xs: 3, md: 4 } }}>
+        <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
           <Typography variant="body2" align="center">
-            &copy; {new Date().getFullYear()} Kalendarro
+            {t('footer.copyright', { year: new Date().getFullYear() })}
           </Typography>
         </Container>
       </Box>

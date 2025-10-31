@@ -25,14 +25,17 @@ import {
   deleteReservation,
 } from '../../api/reservations.js';
 import { addDays, startOfToday, isBefore } from 'date-fns';
+import { useLocale } from '../../context/LocaleContext.jsx';
 
 const formatDateInput = (date) => format(date, 'yyyy-MM-dd');
 
 export default function HomeOverview() {
+  const { t } = useLocale();
   const [properties, setProperties] = useState([]);
   const [selectedPropertyId, setSelectedPropertyId] = useState('');
   const [rooms, setRooms] = useState([]);
   const [reservations, setReservations] = useState([]);
+  const [roomFilterId, setRoomFilterId] = useState('all');
 
   const [loadingProperties, setLoadingProperties] = useState(true);
   const [loadingRooms, setLoadingRooms] = useState(false);
@@ -62,12 +65,16 @@ export default function HomeOverview() {
       })
       .catch((err) => {
         if (err.name === 'AbortError') return;
-        setPropertiesError(err.message || 'Unable to load properties.');
+        setPropertiesError(t('dashboard.errors.properties'));
       })
       .finally(() => setLoadingProperties(false));
 
     return () => controller.abort();
-  }, []);
+  }, [t]);
+
+  useEffect(() => {
+    setRoomFilterId('all');
+  }, [selectedPropertyId]);
 
   useEffect(() => {
     if (!selectedPropertyId) {
@@ -87,12 +94,12 @@ export default function HomeOverview() {
       })
       .catch((err) => {
         if (err.name === 'AbortError') return;
-        setRoomsError(err.message || 'Unable to load rooms.');
+        setRoomsError(t('dashboard.errors.rooms'));
       })
       .finally(() => setLoadingRooms(false));
 
     return () => controller.abort();
-  }, [selectedPropertyId]);
+  }, [selectedPropertyId, t]);
 
   useEffect(() => {
     if (!selectedPropertyId) {
@@ -103,6 +110,7 @@ export default function HomeOverview() {
 
     const controller = new AbortController();
     setLoadingReservations(true);
+    setReservations([]);
     loadReservations({
       signal: controller.signal,
       filters: { property_id: selectedPropertyId },
@@ -113,12 +121,12 @@ export default function HomeOverview() {
       })
       .catch((err) => {
         if (err.name === 'AbortError') return;
-        setReservationsError(err.message || 'Unable to load reservations.');
+        setReservationsError(t('dashboard.errors.reservations'));
       })
       .finally(() => setLoadingReservations(false));
 
     return () => controller.abort();
-  }, [selectedPropertyId]);
+  }, [selectedPropertyId, t]);
 
   const selectedProperty = useMemo(
     () => properties.find((property) => property.id === selectedPropertyId) ?? null,
@@ -132,6 +140,14 @@ export default function HomeOverview() {
     return rooms.map((room) => ({ ...room, propertyName: selectedProperty.name }));
   }, [rooms, selectedProperty]);
 
+  const filteredReservations = useMemo(() => {
+    if (roomFilterId === 'all') return reservations;
+    return reservations.filter((reservation) => {
+      const reservationRoomId = reservation.room_id || reservation.room?.id;
+      return reservationRoomId === roomFilterId;
+    });
+  }, [reservations, roomFilterId]);
+
   const [mobileActiveRoomId, setMobileActiveRoomId] = useState('');
 
   useEffect(() => {
@@ -139,6 +155,21 @@ export default function HomeOverview() {
     const fallback = roomFromFilter || rooms[0]?.id || '';
     setMobileActiveRoomId((prev) => (prev && rooms.some((room) => room.id === prev) ? prev : fallback));
   }, [rooms, selectedPropertyId]);
+
+  useEffect(() => {
+    if (roomFilterId === 'all') return;
+    if (rooms.some((room) => room.id === roomFilterId)) {
+      setMobileActiveRoomId(roomFilterId);
+    }
+  }, [roomFilterId, rooms]);
+
+  useEffect(() => {
+    if (roomFilterId === 'all') return;
+    const exists = rooms.some((room) => room.id === roomFilterId);
+    if (!exists) {
+      setRoomFilterId('all');
+    }
+  }, [rooms, roomFilterId]);
 
   const closeDialog = () => {
     setDialogState({
@@ -161,11 +192,19 @@ export default function HomeOverview() {
     const endDateStr =
       initialValues.end_date || formatDateInput(addDays(startDate, 1));
 
-    const defaultRoomId =
-      initialValues.room_id ||
-      rooms.find((room) => room.property_id === propertyId)?.id ||
-      rooms[0]?.id ||
-      '';
+    const roomsForProperty = rooms.filter((room) => room.property_id === propertyId);
+    let defaultRoomId = initialValues.room_id || '';
+
+    if (!defaultRoomId && roomFilterId !== 'all') {
+      const roomFromFilter = roomsForProperty.find((room) => room.id === roomFilterId);
+      if (roomFromFilter) {
+        defaultRoomId = roomFromFilter.id;
+      }
+    }
+
+    if (!defaultRoomId) {
+      defaultRoomId = roomsForProperty[0]?.id || '';
+    }
 
     setDialogState({
       open: true,
@@ -228,6 +267,9 @@ export default function HomeOverview() {
     if (propertyIdForRoom) {
       setSelectedPropertyId(propertyIdForRoom);
     }
+    if (room?.id) {
+      setRoomFilterId(room.id);
+    }
     openCreateDialog({
       property_id: propertyIdForRoom,
       start_date: formatDateInput(startDate),
@@ -247,23 +289,37 @@ export default function HomeOverview() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <Stack direction={{ xs: 'column', md: 'row' }} alignItems={{ md: 'center' }} spacing={2}>
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        alignItems={{ xs: 'stretch', md: 'center' }}
+        spacing={{ xs: 2.5, md: 2 }}
+      >
         <Box sx={{ flexGrow: 1 }}>
           <Typography variant="h4" component="h1">
-            Dashboard
+            {t('dashboard.title')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Track availability and manage bookings across your properties.
+            {t('dashboard.subtitle')}
           </Typography>
         </Box>
 
-        <FormControl size="small" sx={{ minWidth: 220 }} disabled={loadingProperties || properties.length === 0}>
-          <InputLabel id="dashboard-property-select-label">Property</InputLabel>
+        <FormControl
+          size="small"
+          sx={{ minWidth: { xs: '100%', md: 240 }, maxWidth: { xs: '100%', md: 260 } }}
+          disabled={loadingProperties || properties.length === 0}
+        >
+          <InputLabel id="dashboard-property-select-label">
+            {t('reservationForm.fields.property')}
+          </InputLabel>
           <Select
             labelId="dashboard-property-select-label"
             value={selectedPropertyId}
-            label="Property"
-            onChange={(event) => setSelectedPropertyId(event.target.value)}
+            label={t('reservationForm.fields.property')}
+            onChange={(event) => {
+              const nextPropertyId = event.target.value;
+              setSelectedPropertyId(nextPropertyId);
+              setRoomFilterId('all');
+            }}
           >
             {properties.map((property) => (
               <MenuItem key={property.id} value={property.id}>
@@ -273,8 +329,13 @@ export default function HomeOverview() {
           </Select>
         </FormControl>
 
-        <Button variant="outlined" component={RouterLink} to="/dashboard/settings">
-          Manage properties
+        <Button
+          variant="outlined"
+          component={RouterLink}
+          to="/dashboard/settings"
+          sx={{ width: { xs: '100%', md: 'auto' } }}
+        >
+          {t('dashboard.manageProperties')}
         </Button>
       </Stack>
 
@@ -282,14 +343,22 @@ export default function HomeOverview() {
 
       {!selectedPropertyId && !loadingProperties ? (
         <Alert severity="info">
-          Add your first property in settings to start creating reservations.
+          {t('dashboard.infoNoProperty')}
         </Alert>
       ) : (
         <>
           <Box>
-            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              justifyContent="space-between"
+              alignItems={{ xs: 'flex-start', sm: 'center' }}
+              spacing={{ xs: 2, sm: 0 }}
+              mb={2.5}
+            >
               <Typography variant="h6">
-                Availability {selectedProperty ? `— ${selectedProperty.name}` : ''}
+                {`${t('dashboard.availability')} ${
+                  selectedProperty ? `— ${selectedProperty.name}` : ''
+                }`}
               </Typography>
               <Button
                 variant="contained"
@@ -297,14 +366,12 @@ export default function HomeOverview() {
                 onClick={() =>
                   openCreateDialog({
                     property_id: selectedPropertyId,
-                    room_id:
-                      rooms.find((room) => room.property_id === selectedPropertyId)?.id ||
-                      rooms[0]?.id ||
-                      '',
+                    room_id: roomFilterId !== 'all' ? roomFilterId : undefined,
                   })
                 }
+                sx={{ width: { xs: '100%', sm: 'auto' } }}
               >
-                Add reservation
+                {t('dashboard.addReservation')}
               </Button>
             </Stack>
 
@@ -319,61 +386,83 @@ export default function HomeOverview() {
                     {roomsError || reservationsError}
                   </Alert>
                 )}
-                <ReservationCalendar
-                  rooms={roomsForCalendar}
-                  reservations={reservations}
-                  onDayClick={handleDayClick}
-                  onReservationSelect={openEditDialog}
-                  onRoomChange={(roomId) => {
-                    const targetRoom = rooms.find((room) => room.id === roomId);
-                    if (targetRoom?.property_id) {
-                      setSelectedPropertyId(targetRoom.property_id);
-                    }
-                    setMobileActiveRoomId(roomId);
-                  }}
-                  selectedRoomId={mobileActiveRoomId}
-                />
+                <Box sx={{ width: '100%', overflow: 'hidden' }}>
+                  <ReservationCalendar
+                    rooms={roomsForCalendar}
+                    reservations={reservations}
+                    onDayClick={handleDayClick}
+                    onReservationSelect={openEditDialog}
+                    onRoomChange={(roomId) => {
+                      const targetRoom = rooms.find((room) => room.id === roomId);
+                      if (targetRoom?.property_id) {
+                        setSelectedPropertyId(targetRoom.property_id);
+                      }
+                      setMobileActiveRoomId(roomId);
+                      if (roomId) {
+                        setRoomFilterId(roomId);
+                      }
+                    }}
+                    selectedRoomId={mobileActiveRoomId}
+                  />
+                </Box>
               </>
             )}
           </Box>
 
           <Typography variant="h6" gutterBottom sx={{ mt: 4 }}>
-            Reservations
+            {t('dashboard.reservations')}
           </Typography>
 
           <ReservationList
-            reservations={reservations}
+            reservations={filteredReservations}
             onDeleteReservation={handleDelete}
             onEditReservation={openEditDialog}
             onAddReservation={() =>
               openCreateDialog({
                 property_id: selectedPropertyId,
-                room_id:
-                  rooms.find((room) => room.property_id === selectedPropertyId)?.id ||
-                  rooms[0]?.id ||
-                  '',
+                room_id: roomFilterId !== 'all' ? roomFilterId : undefined,
               })
             }
             showHeader={false}
             canAdd={rooms.length > 0}
+            rooms={rooms}
+            roomFilterId={roomFilterId}
+            onRoomFilterChange={setRoomFilterId}
           />
         </>
       )}
 
       {dialogState.open && (
         <ReservationFormDialog
-          title={dialogState.mode === 'create' ? 'Add Reservation' : 'Edit Reservation'}
+          title={
+            dialogState.mode === 'create'
+              ? t('reservationForm.addTitle')
+              : t('reservationForm.editTitle')
+          }
           initialValues={dialogState.initialValues}
-          submitLabel={dialogState.mode === 'create' ? 'Create' : 'Save changes'}
-          submittingLabel={dialogState.mode === 'create' ? 'Creating...' : 'Saving...'}
+          submitLabel={
+            dialogState.mode === 'create'
+              ? t('reservationForm.submitCreate')
+              : t('reservationForm.submitSave')
+          }
+          submittingLabel={
+            dialogState.mode === 'create'
+              ? t('reservationForm.submitCreating')
+              : t('reservationForm.submitSaving')
+          }
           onSubmit={dialogSubmit}
           onCancel={closeDialog}
           properties={properties}
           rooms={rooms}
-          onPropertyChange={(propertyId) => setSelectedPropertyId(propertyId)}
+          onPropertyChange={(propertyId) => {
+            setSelectedPropertyId(propertyId);
+            setRoomFilterId('all');
+          }}
           loadingProperties={loadingProperties}
           loadingRooms={loadingRooms}
           minDate={dialogState.mode === 'create' ? formatDateInput(startOfToday()) : undefined}
+          existingReservations={reservations}
+          reservationId={dialogState.reservation?.id}
         />
       )}
     </Box>

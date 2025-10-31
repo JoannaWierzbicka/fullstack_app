@@ -1,22 +1,51 @@
+import { useCallback, useMemo } from 'react';
 import { Button, Card, CardActions, CardContent, Typography } from '@mui/material';
 import { format } from 'date-fns';
-
-const formatDate = (value) => {
-  const date = value ? new Date(value) : null;
-  return date && !Number.isNaN(date.getTime()) ? format(date, 'd MMM yyyy') : '—';
-};
-
-const formatPrice = new Intl.NumberFormat('pl-PL', {
-  style: 'currency',
-  currency: 'PLN',
-  maximumFractionDigits: 2,
-});
+import { useLocale } from '../context/LocaleContext.jsx';
 
 function ReservationCard({ reservation, onEdit, onDelete, onView, disabled = false }) {
+  const { t, dateLocale, language } = useLocale();
+  const numberFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat(language === 'pl' ? 'pl-PL' : 'en-US', {
+        style: 'currency',
+        currency: 'PLN',
+        maximumFractionDigits: 2,
+      }),
+    [language],
+  );
+
+  const formatDate = useCallback(
+    (value) => {
+      const date = value ? new Date(value) : null;
+      return date && !Number.isNaN(date.getTime())
+        ? format(date, 'd MMM yyyy', { locale: dateLocale })
+        : '—';
+    },
+    [dateLocale],
+  );
+
   const formattedStart = formatDate(reservation.start_date);
   const formattedEnd = formatDate(reservation.end_date);
   const propertyName = reservation.property?.name ?? '—';
   const roomName = reservation.room?.name ?? '—';
+  const adultsProvided = reservation.adults !== undefined && reservation.adults !== null;
+  const childrenProvided = reservation.children !== undefined && reservation.children !== null;
+  const guestSummary = (() => {
+    if (adultsProvided && childrenProvided) {
+      return t('reservationCard.guestsSummary', {
+        adults: reservation.adults,
+        children: reservation.children,
+      });
+    }
+    if (adultsProvided) {
+      return `${t('common.adults')}: ${reservation.adults}`;
+    }
+    if (childrenProvided) {
+      return `${t('common.children')}: ${reservation.children}`;
+    }
+    return '—';
+  })();
 
   return (
     <Card
@@ -26,6 +55,7 @@ function ReservationCard({ reservation, onEdit, onDelete, onView, disabled = fal
       }}
       sx={{
         height: '100%',
+        width: '100%',
         cursor: disabled ? 'not-allowed' : 'pointer',
         display: 'flex',
         flexDirection: 'column',
@@ -43,22 +73,25 @@ function ReservationCard({ reservation, onEdit, onDelete, onView, disabled = fal
           {reservation.name} {reservation.lastname}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Property: {propertyName}
+          {t('reservationCard.property')}: {propertyName}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Room: {roomName}
+          {t('reservationCard.room')}: {roomName}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          From: <strong>{formattedStart}</strong>
+          {t('reservationCard.from')}: <strong>{formattedStart}</strong>
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          To: <strong>{formattedEnd}</strong>
+          {t('reservationCard.to')}: <strong>{formattedEnd}</strong>
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Guests: {reservation.adults} Adults, {reservation.children} Children
+          {t('reservationCard.guests')}: {guestSummary}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Price: {formatPrice.format(Number(reservation.price ?? 0))}
+          {t('reservationCard.price')}:{' '}
+          {reservation.price !== undefined && reservation.price !== null
+            ? numberFormatter.format(Number(reservation.price))
+            : '—'}
         </Typography>
       </CardContent>
 
@@ -69,7 +102,7 @@ function ReservationCard({ reservation, onEdit, onDelete, onView, disabled = fal
           onClick={() => onEdit?.()}
           disabled={disabled}
         >
-          Edit
+          {t('reservationCard.actions.edit')}
         </Button>
         <Button
           variant="outlined"
@@ -77,7 +110,7 @@ function ReservationCard({ reservation, onEdit, onDelete, onView, disabled = fal
           onClick={() => onDelete?.()}
           disabled={disabled}
         >
-          Delete
+          {t('reservationCard.actions.delete')}
         </Button>
       </CardActions>
     </Card>

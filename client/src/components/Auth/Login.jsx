@@ -3,6 +3,7 @@ import { Alert, Box, Button, TextField, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { loginUser } from '../../api/auth.js';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useLocale } from '../../context/LocaleContext.jsx';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -11,6 +12,7 @@ function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { t } = useLocale();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,7 +23,7 @@ function Login() {
       login({ user, session });
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message || 'Unable to log in. Please try again.');
+      setError(err.message || t('auth.loginError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -29,11 +31,11 @@ function Login() {
 
   return (
     <Box maxWidth={400} mx="auto">
-      <Typography variant="h5" gutterBottom>Login</Typography>
+      <Typography variant="h5" gutterBottom>{t('auth.loginTitle')}</Typography>
       {error && <Alert severity="error">{error}</Alert>}
       <form onSubmit={handleSubmit}>
         <TextField
-          label="Email"
+          label={t('auth.email')}
           type="email"
           autoComplete="email"
           required
@@ -43,7 +45,7 @@ function Login() {
           onChange={e => setEmail(e.target.value)}
         />
         <TextField
-          label="Password"
+          label={t('auth.password')}
           fullWidth
           required
           type="password"
@@ -59,7 +61,7 @@ function Login() {
           sx={{ mt: 2 }}
           disabled={isSubmitting}
         >
-          {isSubmitting ? 'Logging in...' : 'Login'}
+          {isSubmitting ? t('auth.loginSubmitting') : t('auth.loginButton')}
         </Button>
       </form>
     </Box>

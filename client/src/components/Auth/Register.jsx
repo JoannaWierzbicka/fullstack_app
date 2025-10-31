@@ -1,13 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Alert, Box, Button, TextField, Typography } from '@mui/material';
 import { registerUser, loginUser } from '../../api/auth.js';
 import { useAuth } from '../../context/AuthContext.jsx';
-
-const REGISTRATION_SUCCESS_FLASH = {
-  message: 'Dziękujemy za rejestrację! Zostałeś zalogowany.',
-  severity: 'success',
-};
+import { useLocale } from '../../context/LocaleContext.jsx';
 
 function Register() {
   const [email, setEmail] = useState('');
@@ -16,6 +12,14 @@ function Register() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { t } = useLocale();
+  const registrationSuccessFlash = useMemo(
+    () => ({
+      message: t('auth.registerSuccessAutoLogin'),
+      severity: 'success',
+    }),
+    [t],
+  );
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -41,20 +45,20 @@ function Register() {
       }
 
       if (!session || !user) {
-        throw new Error('Registration succeeded, but automatic login failed. Please try logging in manually.');
+        throw new Error(t('auth.registerErrorGeneric'));
       }
 
       login({ user, session });
       navigate('/dashboard', {
         replace: true,
-        state: { flash: REGISTRATION_SUCCESS_FLASH },
+        state: { flash: registrationSuccessFlash },
       });
     } catch (err) {
-      const message = err.message || 'Something went wrong during registration.';
+      const message = err.message || t('auth.registerErrorGeneric');
       if (message.toLowerCase().includes('already')) {
-        setError('An account with this email already exists.');
+        setError(t('auth.registerErrorExisting'));
       } else {
-        setError(message);
+        setError(message || t('auth.registerErrorGeneric'));
       }
     } finally {
       setIsSubmitting(false);
@@ -63,24 +67,27 @@ function Register() {
 
   return (
     <Box maxWidth={400} mx="auto">
-      <Typography variant="h5" gutterBottom>Register</Typography>
+      <Typography variant="h5" gutterBottom>{t('auth.registerTitle')}</Typography>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       <form onSubmit={handleSubmit}>
         <TextField
-          label="Email"
+          label={t('auth.email')}
           fullWidth
           required
           margin="normal"
+          type="email"
+          autoComplete="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
         />
         <TextField
-          label="Password"
+          label={t('auth.password')}
           fullWidth
           required
           type="password"
+          autoComplete="new-password"
           margin="normal"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
@@ -92,7 +99,7 @@ function Register() {
           sx={{ mt: 2 }}
           disabled={isSubmitting}
         >
-          {isSubmitting ? 'Registering...' : 'Register'}
+          {isSubmitting ? t('auth.registerSubmitting') : t('auth.registerButton')}
         </Button>
       </form>
     </Box>

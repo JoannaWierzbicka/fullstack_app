@@ -15,6 +15,7 @@ import {
   Typography,
 } from '@mui/material';
 import { FaSave, FaTimes } from 'react-icons/fa';
+import { useLocale } from '../context/LocaleContext.jsx';
 
 const DEFAULT_FORM_VALUES = {
   name: '',
@@ -48,36 +49,45 @@ const toFormValues = (values = {}) => ({
   }, {}),
 });
 
-const toPayload = (values) => ({
-  name: values.name.trim(),
-  lastname: values.lastname.trim(),
-  phone: values.phone.trim(),
-  mail: values.mail.trim(),
-  start_date: values.start_date,
-  end_date: values.end_date,
-  property_id: values.property_id || null,
-  room_id: values.room_id || null,
-  price: values.price ? Number(values.price) : null,
-  adults: values.adults ? Number(values.adults) : null,
-  children: values.children ? Number(values.children) : null,
-});
+const toPayload = (values) => {
+  const normalizeString = (value) => {
+    if (value === undefined || value === null) return null;
+    const trimmed = String(value).trim();
+    return trimmed.length === 0 ? null : trimmed;
+  };
 
-const validateForm = (values) => {
-  if (!values.name.trim()) return 'First name is required.';
-  if (!values.lastname.trim()) return 'Last name is required.';
-  if (!values.phone.trim()) return 'Phone is required.';
-  if (!values.mail.trim()) return 'Email is required.';
-  if (!values.start_date) return 'Start date is required.';
-  if (!values.end_date) return 'End date is required.';
-  if (!values.property_id) return 'Property is required.';
-  if (!values.room_id) return 'Room is required.';
-  if (!values.price) return 'Price is required.';
-  if (!values.adults) return 'Number of adults is required.';
+  const normalizeNumber = (value) => {
+    if (value === undefined || value === null || value === '') return null;
+    return Number(value);
+  };
+
+  return {
+    name: values.name.trim(),
+    lastname: values.lastname.trim(),
+    phone: normalizeString(values.phone),
+    mail: normalizeString(values.mail),
+    start_date: values.start_date,
+    end_date: values.end_date,
+    property_id: values.property_id || null,
+    room_id: values.room_id || null,
+    price: normalizeNumber(values.price),
+    adults: normalizeNumber(values.adults),
+    children: normalizeNumber(values.children),
+  };
+};
+
+const validateForm = (values, t) => {
+  if (!values.name.trim()) return t('reservationForm.errors.firstName');
+  if (!values.lastname.trim()) return t('reservationForm.errors.lastName');
+  if (!values.start_date) return t('reservationForm.errors.startDate');
+  if (!values.end_date) return t('reservationForm.errors.endDate');
+  if (!values.property_id) return t('reservationForm.errors.property');
+  if (!values.room_id) return t('reservationForm.errors.room');
   if (values.start_date && values.end_date) {
     const start = new Date(values.start_date);
     const end = new Date(values.end_date);
     if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && end <= start) {
-      return 'End date must be after the start date.';
+      return t('reservationForm.errors.dateOrder');
     }
   }
   return null;
@@ -97,7 +107,10 @@ function ReservationFormDialog({
   loadingRooms = false,
   dataError,
   minDate,
+  existingReservations = [],
+  reservationId,
 }) {
+  const { t } = useLocale();
   const [formValues, setFormValues] = useState(() => toFormValues(initialValues));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -124,17 +137,51 @@ function ReservationFormDialog({
     });
   }, [rooms]);
 
+  const dateConflict = useMemo(() => {
+    if (!Array.isArray(existingReservations) || existingReservations.length === 0) return false;
+    const { room_id: selectedRoomId, start_date: startDateValue, end_date: endDateValue } = formValues;
+    if (!selectedRoomId || !startDateValue || !endDateValue) return false;
+
+    const start = new Date(startDateValue);
+    const end = new Date(endDateValue);
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      return false;
+    }
+
+    return existingReservations.some((reservation) => {
+      const reservationIdMatch = reservation?.id;
+      if (reservationId && reservationIdMatch === reservationId) {
+        return false;
+      }
+
+      const reservationRoomId = reservation?.room_id || reservation?.room?.id;
+      if (!reservationRoomId || reservationRoomId !== selectedRoomId) {
+        return false;
+      }
+
+      const reservationStart = new Date(reservation.start_date);
+      const reservationEnd = new Date(reservation.end_date);
+
+      if (Number.isNaN(reservationStart.getTime()) || Number.isNaN(reservationEnd.getTime())) {
+        return false;
+      }
+
+      return reservationStart <= end && reservationEnd >= start;
+    });
+  }, [existingReservations, formValues, reservationId]);
+
   const disableSubmit = useMemo(() => {
     return (
-      !formValues.name ||
-      !formValues.lastname ||
-      !formValues.mail ||
+      !formValues.name.trim() ||
+      !formValues.lastname.trim() ||
       !formValues.start_date ||
       !formValues.end_date ||
       !formValues.property_id ||
-      !formValues.room_id
+      !formValues.room_id ||
+      dateConflict
     );
-  }, [formValues]);
+  }, [formValues, dateConflict]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -146,9 +193,14 @@ function ReservationFormDialog({
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const validationError = validateForm(formValues);
+    const validationError = validateForm(formValues, t);
     if (validationError) {
       setError(validationError);
+      return;
+    }
+
+    if (dateConflict) {
+      setError(t('reservationForm.errors.conflict'));
       return;
     }
 
@@ -157,9 +209,11 @@ function ReservationFormDialog({
     try {
       await onSubmit(toPayload(formValues));
     } catch (submissionError) {
-      setError(
-        submissionError?.message || 'We were unable to save the reservation. Please try again.',
-      );
+      if (submissionError?.status === 409) {
+        setError(t('reservationForm.errors.conflict'));
+      } else {
+        setError(submissionError?.message || t('reservationForm.errors.generic'));
+      }
     } finally {
       if (isMountedRef.current) {
         setIsSubmitting(false);
@@ -179,7 +233,13 @@ function ReservationFormDialog({
 
         {(properties?.length === 0 && !loadingProperties) && (
           <Alert severity="info" sx={{ mb: 2 }}>
-            Add a property first in Settings to create reservations.
+            {t('reservationForm.info.addProperty')}
+          </Alert>
+        )}
+
+        {dateConflict && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            {t('reservationForm.errors.conflict')}
           </Alert>
         )}
 
@@ -195,7 +255,7 @@ function ReservationFormDialog({
           sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}
         >
           <TextField
-            label="First Name"
+            label={t('reservationForm.fields.firstName')}
             name="name"
             value={formValues.name}
             onChange={handleChange}
@@ -204,7 +264,7 @@ function ReservationFormDialog({
           />
 
           <TextField
-            label="Last Name"
+            label={t('reservationForm.fields.lastName')}
             name="lastname"
             value={formValues.lastname}
             onChange={handleChange}
@@ -213,26 +273,24 @@ function ReservationFormDialog({
           />
 
           <TextField
-            label="Phone"
+            label={t('reservationForm.fields.phone')}
             name="phone"
             value={formValues.phone}
             onChange={handleChange}
-            required
             fullWidth
           />
 
           <TextField
-            label="Email"
+            label={t('reservationForm.fields.email')}
             name="mail"
             type="email"
             value={formValues.mail}
             onChange={handleChange}
-            required
             fullWidth
           />
 
           <TextField
-            label="Start Date"
+            label={t('reservationForm.fields.startDate')}
             name="start_date"
             type="date"
             value={formValues.start_date}
@@ -241,10 +299,12 @@ function ReservationFormDialog({
             fullWidth
             InputLabelProps={{ shrink: true }}
             inputProps={{ min: minDate }}
+            error={dateConflict}
+            helperText={dateConflict ? t('reservationForm.errors.conflict') : undefined}
           />
 
           <TextField
-            label="End Date"
+            label={t('reservationForm.fields.endDate')}
             name="end_date"
             type="date"
             value={formValues.end_date}
@@ -253,15 +313,17 @@ function ReservationFormDialog({
             fullWidth
             InputLabelProps={{ shrink: true }}
             inputProps={{ min: formValues.start_date || minDate }}
+            error={dateConflict}
+            helperText={dateConflict ? t('reservationForm.errors.conflict') : undefined}
           />
 
           <FormControl required fullWidth disabled={loadingProperties || (properties?.length ?? 0) === 0}>
-            <InputLabel id="property-label">Property</InputLabel>
+            <InputLabel id="property-label">{t('reservationForm.fields.property')}</InputLabel>
             <Select
               labelId="property-label"
               name="property_id"
               value={formValues.property_id}
-              label="Property"
+              label={t('reservationForm.fields.property')}
               onChange={(event) => {
                 handleChange(event);
                 onPropertyChange?.(event.target.value);
@@ -280,13 +342,13 @@ function ReservationFormDialog({
           </FormControl>
 
           <FormControl required fullWidth>
-            <InputLabel id="room-label">Room</InputLabel>
+            <InputLabel id="room-label">{t('reservationForm.fields.room')}</InputLabel>
             <Select
               labelId="room-label"
               name="room_id"
               value={formValues.room_id}
               onChange={handleChange}
-              label="Room"
+              label={t('reservationForm.fields.room')}
               disabled={!formValues.property_id || loadingRooms || !rooms?.length}
             >
               {rooms?.map((room) => (
@@ -298,25 +360,37 @@ function ReservationFormDialog({
           </FormControl>
 
           <TextField
-            label="Price (PLN)"
+            label={t('reservationForm.fields.price')}
             name="price"
             type="number"
             value={formValues.price}
             onChange={handleChange}
-            required
             fullWidth
             inputProps={{ min: 0 }}
           />
 
-          <FormControl required fullWidth>
-            <InputLabel id="adults-label">Adults</InputLabel>
+          <FormControl fullWidth>
+            <InputLabel id="adults-label" shrink>{t('common.adults')}</InputLabel>
             <Select
               labelId="adults-label"
               name="adults"
               value={formValues.adults}
               onChange={handleChange}
-              label="Adults"
+              label={t('common.adults')}
+              displayEmpty
+              renderValue={(selected) =>
+                selected
+                  ? selected
+                  : (
+                      <Box component="span" sx={{ color: 'text.secondary' }}>
+                        {t('common.notSet')}
+                      </Box>
+                    )
+              }
             >
+              <MenuItem value="">
+                <em>{t('common.notSet')}</em>
+              </MenuItem>
               {ADULT_OPTIONS.map((value) => (
                 <MenuItem key={value} value={value}>
                   {value}
@@ -325,15 +399,28 @@ function ReservationFormDialog({
             </Select>
           </FormControl>
 
-          <FormControl required fullWidth>
-            <InputLabel id="children-label">Children</InputLabel>
+          <FormControl fullWidth>
+            <InputLabel id="children-label" shrink>{t('common.children')}</InputLabel>
             <Select
               labelId="children-label"
               name="children"
               value={formValues.children}
               onChange={handleChange}
-              label="Children"
+              label={t('common.children')}
+              displayEmpty
+              renderValue={(selected) =>
+                selected
+                  ? selected
+                  : (
+                      <Box component="span" sx={{ color: 'text.secondary' }}>
+                        {t('common.notSet')}
+                      </Box>
+                    )
+              }
             >
+              <MenuItem value="">
+                <em>{t('common.notSet')}</em>
+              </MenuItem>
               {CHILDREN_OPTIONS.map((value) => (
                 <MenuItem key={value} value={value}>
                   {value}
@@ -349,7 +436,7 @@ function ReservationFormDialog({
               startIcon={<FaTimes />}
               disabled={isSubmitting}
             >
-              Cancel
+              {t('reservationForm.cancel')}
             </Button>
             <Button
               type="submit"
