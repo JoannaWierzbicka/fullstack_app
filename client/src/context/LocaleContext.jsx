@@ -3,7 +3,7 @@ import { enUS, pl } from 'date-fns/locale';
 import { translations } from '../i18n/translations.js';
 
 const LocaleContext = createContext(null);
-const STORAGE_KEY = 'kalendarro:language';
+const STORAGE_KEY = 'myrescal:language';
 const FALLBACK_LANG = 'en';
 const DATE_FNS_LOCALES = {
   en: enUS,

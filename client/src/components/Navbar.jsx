@@ -83,7 +83,7 @@ export default function Navbar() {
           >
             <FilterHdrIcon fontSize="medium" />
             <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' }, fontWeight: 600 }}>
-              Kalendarro
+              MyResCal
             </Box>
           </Typography>
         </Stack>
@@ -175,7 +175,7 @@ export default function Navbar() {
       >
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: 2 }}>
-            <Typography variant="h6">Kalendarro</Typography>
+            <Typography variant="h6">MyResCal</Typography>
             <IconButton onClick={() => setMenuOpen(false)} aria-label="close navigation">
               <CloseIcon />
             </IconButton>

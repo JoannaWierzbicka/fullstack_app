@@ -20,7 +20,7 @@ export const translations = {
       createAccount: 'Create account',
     },
     footer: {
-      copyright: '© {{year}} Kalendarro',
+      copyright: '© {{year}} MyResCal',
     },
     dashboard: {
       title: 'Dashboard',
@@ -215,7 +215,7 @@ export const translations = {
       createAccount: 'Załóż konto',
     },
     footer: {
-      copyright: '© {{year}} Kalendarro',
+      copyright: '© {{year}} MyResCal',
     },
     dashboard: {
       title: 'Panel',
