@@ -288,7 +288,15 @@ export default function HomeOverview() {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 3,
+        px: { xs: 1, sm: 1.5, md: 2 },
+        pt: { xs: 1, sm: 1.5, md: 2 },
+      }}
+    >
       <Stack
         direction={{ xs: 'column', md: 'row' }}
         alignItems={{ xs: 'stretch', md: 'center' }}
@@ -360,14 +368,15 @@ export default function HomeOverview() {
                   selectedProperty ? `— ${selectedProperty.name}` : ''
                 }`}
               </Typography>
-              <Button
-                variant="contained"
-                disabled={rooms.length === 0}
-                onClick={() =>
-                  openCreateDialog({
-                    property_id: selectedPropertyId,
-                    room_id: roomFilterId !== 'all' ? roomFilterId : undefined,
-                  })
+        <Button
+          variant="contained"
+          disabled={rooms.length === 0}
+          color="info"
+          onClick={() =>
+            openCreateDialog({
+              property_id: selectedPropertyId,
+              room_id: roomFilterId !== 'all' ? roomFilterId : undefined,
+            })
                 }
                 sx={{ width: { xs: '100%', sm: 'auto' } }}
               >

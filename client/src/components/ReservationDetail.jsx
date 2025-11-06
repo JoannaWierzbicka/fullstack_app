@@ -13,6 +13,7 @@ import {
 import { format } from 'date-fns';
 import { FaArrowLeft, FaTrashAlt } from 'react-icons/fa';
 import { useLocale } from '../context/LocaleContext.jsx';
+import { getReservationStatusMeta } from '../utils/reservationStatus.js';
 
 function ReservationDetail() {
   const reservation = useLoaderData() ?? {};
@@ -20,6 +21,7 @@ function ReservationDetail() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState(null);
   const { t, language, dateLocale } = useLocale();
+  const statusMeta = getReservationStatusMeta(reservation.status);
 
   const formatDate = useCallback(
     (value) => {
@@ -72,6 +74,26 @@ function ReservationDetail() {
         <Divider sx={{ my: 2 }} />
 
         <Stack spacing={1}>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+            <Box
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 1,
+                borderRadius: 999,
+                px: 1.8,
+                py: 0.6,
+                backgroundColor: statusMeta.background,
+                color: statusMeta.color,
+                letterSpacing: '0.14em',
+                fontSize: '0.7rem',
+                textTransform: 'uppercase',
+                fontWeight: 600,
+              }}
+            >
+              {t(statusMeta.labelKey)}
+            </Box>
+          </Box>
           <DetailItem
             label={t('reservationDetail.name')}
             value={[reservation.name, reservation.lastname].filter(Boolean).join(' ') || '—'}

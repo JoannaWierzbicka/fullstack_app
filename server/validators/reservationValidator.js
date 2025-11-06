@@ -1,5 +1,15 @@
 import { createHttpError } from '../utils/httpError.js';
 
+export const RESERVATION_STATUSES = Object.freeze([
+  'preliminary',
+  'deposit_paid',
+  'confirmed',
+  'booking',
+  'past',
+]);
+
+export const DEFAULT_RESERVATION_STATUS = 'preliminary';
+
 const REQUIRED_FIELDS = new Set(['name', 'lastname', 'start_date', 'end_date', 'property_id', 'room_id']);
 
 const toNumber = (value, field) => {
@@ -55,7 +65,7 @@ export const validateReservationPayload = (payload) => {
     return toNumber(value, field);
   };
 
-  return {
+  const result = {
     name: String(payload.name).trim(),
     lastname: String(payload.lastname).trim(),
     phone: normalizeString(payload.phone),
@@ -68,4 +78,14 @@ export const validateReservationPayload = (payload) => {
     adults: normalizeNumber(payload.adults, 'adults'),
     children: normalizeNumber(payload.children, 'children'),
   };
+
+  if (payload.status !== undefined && payload.status !== null && String(payload.status).trim() !== '') {
+    const normalizedStatus = String(payload.status).trim();
+    if (!RESERVATION_STATUSES.includes(normalizedStatus)) {
+      throw createHttpError(400, `Invalid status "${payload.status}".`);
+    }
+    result.status = normalizedStatus;
+  }
+
+  return result;
 };

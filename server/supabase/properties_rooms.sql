@@ -18,7 +18,20 @@ create table if not exists public.rooms (
 -- Reservations adjustments
 alter table public.reservations
   add column if not exists property_id uuid,
-  add column if not exists room_id uuid;
+  add column if not exists room_id uuid,
+  add column if not exists status text default 'preliminary';
+
+update public.reservations
+  set status = coalesce(status, 'preliminary');
+
+do $$
+begin
+  alter table public.reservations
+    add constraint reservations_status_check
+    check (status in ('preliminary', 'deposit_paid', 'confirmed', 'booking', 'past'));
+exception
+  when duplicate_object then null;
+end $$;
 
 alter table public.reservations
   add constraint reservations_property_fk foreign key (property_id)

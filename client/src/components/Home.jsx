@@ -1,83 +1,197 @@
 import React from 'react';
-import { Box, Button, Stack, Typography } from '@mui/material';
+import { Box, Button, Paper, Stack, Typography } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLocale } from '../context/LocaleContext.jsx';
 
 export default function Home() {
   const { isAuthenticated } = useAuth();
-  const { t } = useLocale();
+  const { t, language } = useLocale();
+  const accentLabel = language === 'pl' ? 'Planowanie z uśmiechem' : 'Plan your stay with a smile';
+  const signatureLabel = language === 'pl' ? '1974 // wyjątkowe pobyty' : '1974 // signature stays';
 
   return (
     <Box
       sx={{
-        minHeight: '60vh',
+        minHeight: '68vh',
         display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        textAlign: 'center',
-        gap: 3,
-        maxWidth: 640,
-        mx: 'auto',
-        px: 2,
-        py: 6,
+        px: { xs: 2.5, sm: 3.5, md: 6 },
+        py: { xs: 6, sm: 8, md: 10 },
       }}
     >
-      <Typography
-        variant="h3"
-        component="h1"
-        gutterBottom
-        sx={{ fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' }, fontWeight: 700 }}
-      >
-        {t('home.heroTitle')}
-      </Typography>
-      <Typography
-        variant="body1"
-        color="text.secondary"
-        sx={{ fontSize: { xs: '1rem', sm: '1.05rem' }, lineHeight: 1.6 }}
-      >
-        {t('home.heroSubtitle')}
-      </Typography>
       <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        spacing={2}
-        sx={{ width: '100%' }}
-        justifyContent={{ xs: 'flex-start', sm: 'center' }}
-        alignItems={{ xs: 'stretch', sm: 'center' }}
+        direction={{ xs: 'column', lg: 'row' }}
+        spacing={{ xs: 5, lg: 8 }}
+        sx={{ width: '100%', maxWidth: 1100 }}
+        alignItems={{ xs: 'stretch', lg: 'center' }}
       >
-        {isAuthenticated ? (
-          <Button
-            component={RouterLink}
-            to="/dashboard"
-            variant="contained"
-            size="large"
-            sx={{ width: { xs: '100%', sm: 'auto' } }}
+        <Box
+          sx={{
+            maxWidth: { xs: '100%', sm: 520 },
+            textAlign: { xs: 'center', lg: 'left' },
+            mx: { xs: 'auto', lg: 0 },
+            position: 'relative',
+          }}
+        >
+          <Typography
+            sx={{
+              fontFamily: 'var(--app-font-script)',
+              fontSize: { xs: '1.6rem', sm: '1.9rem' },
+              color: 'secondary.main',
+              mb: 1,
+            }}
           >
-            {t('home.goToDashboard')}
-          </Button>
-        ) : (
-          <>
-            <Button
-              component={RouterLink}
-              to="/login"
-              variant="contained"
-              size="large"
-              sx={{ width: { xs: '100%', sm: 'auto' } }}
+            {accentLabel}
+          </Typography>
+          <Typography
+            variant="h1"
+            component="h1"
+            sx={{
+              fontSize: { xs: '2.5rem', sm: '3.25rem', lg: '3.75rem' },
+              lineHeight: 1.1,
+              mb: 2.5,
+            }}
+          >
+            {t('home.heroTitle')}
+          </Typography>
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            sx={{
+              fontSize: { xs: '1.05rem', sm: '1.15rem' },
+              maxWidth: { xs: '100%', sm: 480 },
+              mx: { xs: 'auto', lg: 0 },
+            }}
+          >
+            {t('home.heroSubtitle')}
+          </Typography>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={2.5}
+            sx={{ mt: 4, width: '100%' }}
+            justifyContent={{ xs: 'center', lg: 'flex-start' }}
+            alignItems={{ xs: 'stretch', sm: 'center' }}
+          >
+            {isAuthenticated ? (
+              <Button
+                component={RouterLink}
+                to="/dashboard"
+                variant="contained"
+                size="large"
+                color="info"
+                sx={{ width: { xs: '100%', sm: 'auto' } }}
+              >
+                {t('home.goToDashboard')}
+              </Button>
+            ) : (
+              <>
+                <Button
+                  component={RouterLink}
+                  to="/login"
+                  variant="contained"
+                  color="primary"
+                  size="large"
+                  sx={{ width: { xs: '100%', sm: 'auto' } }}
+                >
+                  {t('home.login')}
+                </Button>
+                <Button
+                  component={RouterLink}
+                  to="/register"
+                  variant="outlined"
+                  size="large"
+                  sx={{ width: { xs: '100%', sm: 'auto' } }}
+                >
+                  {t('home.createAccount')}
+                </Button>
+              </>
+            )}
+          </Stack>
+        </Box>
+
+        <Box
+          sx={{
+            position: 'relative',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            flex: 1,
+            minHeight: { xs: 320, sm: 360, lg: 400 },
+          }}
+        >
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: { xs: '10% 8%', sm: '12% 10%' },
+              borderRadius: 6,
+              border: '1px dashed rgba(195, 111, 43, 0.4)',
+            }}
+          />
+          <Paper
+            elevation={0}
+            sx={{
+              position: 'relative',
+              transform: { xs: 'rotate(-4deg)', sm: 'rotate(-6deg)' },
+              px: { xs: 3, sm: 4 },
+              py: { xs: 4, sm: 5 },
+              maxWidth: 320,
+              boxShadow: '0 28px 60px rgba(15, 36, 46, 0.18)',
+            }}
+          >
+            <Typography variant="subtitle2" color="secondary.main" sx={{ mb: 1.5 }}>
+              {t('home.heroTitle')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('home.heroSubtitle')}
+            </Typography>
+            <Box
+              sx={{
+                position: 'absolute',
+                bottom: 18,
+                right: 24,
+                width: 68,
+                height: 68,
+                borderRadius: '50%',
+                border: '2px solid rgba(51, 180, 172, 0.6)',
+                display: 'grid',
+                placeItems: 'center',
+                color: 'info.main',
+                fontFamily: 'var(--app-font-script)',
+                fontSize: '1.1rem',
+                transform: 'rotate(8deg)',
+              }}
             >
-              {t('home.login')}
-            </Button>
-            <Button
-              component={RouterLink}
-              to="/register"
-              variant="outlined"
-              size="large"
-              sx={{ width: { xs: '100%', sm: 'auto' } }}
+              RSVP
+            </Box>
+          </Paper>
+          <Paper
+            elevation={0}
+            sx={{
+              position: 'absolute',
+              transform: { xs: 'rotate(6deg) translate(40px, 120px)', sm: 'rotate(9deg) translate(60px, 130px)' },
+              px: { xs: 2.5, sm: 3.5 },
+              py: { xs: 3, sm: 3.5 },
+              maxWidth: 260,
+              background: 'linear-gradient(145deg, #fbf5ea, #f1e3cc)',
+              border: '2px solid rgba(195, 111, 43, 0.4)',
+              boxShadow: '0 24px 55px rgba(15, 36, 46, 0.18)',
+            }}
+          >
+            <Typography
+              variant="subtitle2"
+              sx={{ letterSpacing: '0.15rem', fontSize: '0.85rem', mb: 1, color: 'primary.main' }}
             >
-              {t('home.createAccount')}
-            </Button>
-          </>
-        )}
+              {signatureLabel}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {language === 'pl'
+                ? 'Układaj grafiki rezerwacji jak karty pocztowe.'
+                : 'Arrange every reservation like a keepsake postcard.'}
+            </Typography>
+          </Paper>
+        </Box>
       </Stack>
     </Box>
   );

@@ -171,15 +171,24 @@ export default function Settings() {
           sx={{
             flex: { xs: '1 1 100%', lg: '1 1 40%' },
             minWidth: { xs: '100%', lg: 0 },
+            borderRadius: 5,
+            padding: { xs: 2.5, sm: 3.5 },
           }}
         >
-          <CardContent>
+          <CardContent
+            sx={{
+              p: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: { xs: 2, sm: 2.5 },
+            }}
+          >
             <Stack
               direction={{ xs: 'column', sm: 'row' }}
               justifyContent="space-between"
               alignItems={{ xs: 'flex-start', sm: 'center' }}
               spacing={{ xs: 1.5, sm: 2 }}
-              mb={2.5}
+              sx={{ width: '100%' }}
             >
               <Typography variant="h6">{t('settings.propertiesTitle')}</Typography>
               <Button
@@ -193,7 +202,7 @@ export default function Settings() {
                   px: { xs: 2.5, sm: 3 },
                   minWidth: { xs: 0, sm: 170 },
                   borderRadius: 3,
-                  alignSelf: { xs: 'flex-end', sm: 'initial' },
+                  alignSelf: { xs: 'flex-end', sm: 'center' },
                 }}
               >
                 {t('settings.addProperty')}
@@ -205,7 +214,7 @@ export default function Settings() {
             ) : propertiesError ? (
               <Alert severity="error">{propertiesError}</Alert>
             ) : (
-              <List disablePadding>
+              <List disablePadding sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1, sm: 1.2 } }}>
                 {properties.map((property) => (
                   <ListItem
                     key={property.id}
@@ -235,6 +244,14 @@ export default function Settings() {
                     <ListItemButton
                       selected={property.id === selectedPropertyId}
                       onClick={() => setSelectedPropertyId(property.id)}
+                      sx={{
+                        borderRadius: 3,
+                        px: { xs: 2, sm: 2.5 },
+                        py: { xs: 1.2, sm: 1.4 },
+                        '&.Mui-selected': {
+                          backgroundColor: 'rgba(51, 180, 172, 0.14)',
+                        },
+                      }}
                     >
                       <ListItemText
                         primary={property.name}
@@ -246,7 +263,7 @@ export default function Settings() {
                 ))}
 
                 {properties.length === 0 && (
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: { xs: 0.5, sm: 1 } }}>
                     {t('settings.emptyProperties')}
                   </Typography>
                 )}
@@ -259,15 +276,24 @@ export default function Settings() {
           sx={{
             flex: { xs: '1 1 100%', lg: '1 1 60%' },
             minWidth: { xs: '100%', lg: 0 },
+            borderRadius: 5,
+            padding: { xs: 2.5, sm: 3.5 },
           }}
         >
-          <CardContent>
+          <CardContent
+            sx={{
+              p: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: { xs: 2, sm: 2.5 },
+            }}
+          >
             <Stack
               direction={{ xs: 'column', sm: 'row' }}
               justifyContent="space-between"
               alignItems={{ xs: 'flex-start', sm: 'center' }}
               spacing={{ xs: 1.5, sm: 2 }}
-              mb={2.5}
+              sx={{ width: '100%' }}
             >
               <Typography variant="h6">{roomsHeading}</Typography>
               <Button
@@ -282,7 +308,7 @@ export default function Settings() {
                   px: { xs: 2.5, sm: 3 },
                   minWidth: { xs: 0, sm: 170 },
                   borderRadius: 3,
-                  alignSelf: { xs: 'flex-end', sm: 'initial' },
+                  alignSelf: { xs: 'flex-end', sm: 'center' },
                 }}
               >
                 {t('roomForm.addTitle')}
@@ -300,11 +326,19 @@ export default function Settings() {
                 {t('settings.emptyRooms')}
               </Typography>
             ) : (
-              <List disablePadding>
+              <List disablePadding sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1, sm: 1.2 } }}>
                 {rooms.map((room, index) => (
                   <Box key={room.id}>
                     <ListItem
                       disablePadding
+                      sx={{
+                        px: { xs: 2, sm: 2.5 },
+                        py: { xs: 1.1, sm: 1.3 },
+                        borderRadius: 3,
+                        '&:hover': {
+                          backgroundColor: 'rgba(51, 180, 172, 0.08)',
+                        },
+                      }}
                       secondaryAction={
                         <Stack direction="row" spacing={1}>
                         <IconButton
@@ -332,14 +366,19 @@ export default function Settings() {
                         primaryTypographyProps={{ fontWeight: 500 }}
                       />
                     </ListItem>
-                    {index < rooms.length - 1 && <Divider component="li" />}
+                    {index < rooms.length - 1 && (
+                      <Divider
+                        component="li"
+                        sx={{ mx: { xs: 2, sm: 2.5 }, borderColor: 'rgba(195, 111, 43, 0.2)' }}
+                      />
+                    )}
                   </Box>
                 ))}
               </List>
             )}
           </CardContent>
-          <CardActions>
-            <Typography variant="caption" color="text.secondary">
+          <CardActions sx={{ px: 0, pt: 1 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ px: { xs: 1, sm: 0 } }}>
               {t('settings.roomsInfo')}
             </Typography>
           </CardActions>

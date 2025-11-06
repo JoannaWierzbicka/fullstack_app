@@ -3,7 +3,10 @@ import { supabase } from '../auth/supabaseClient.js';
 import { requireAuth } from '../auth/requireAuth.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { createHttpError } from '../utils/httpError.js';
-import { validateReservationPayload } from '../validators/reservationValidator.js';
+import {
+  validateReservationPayload,
+  DEFAULT_RESERVATION_STATUS,
+} from '../validators/reservationValidator.js';
 
 const router = Router();
 
@@ -51,7 +54,9 @@ router.get(
       throw mapSupabaseError(error);
     }
 
-    res.json(data);
+    const normalized = await applyAutomaticPastStatus(data, ownerId);
+
+    res.json(normalized);
   }),
 );
 
@@ -87,7 +92,9 @@ router.get(
       throw createHttpError(404, `Reservation with ID ${id} not found.`);
     }
 
-    res.json(data);
+    const [normalized] = await applyAutomaticPastStatus([data], ownerId);
+
+    res.json(normalized);
   }),
 );
 
@@ -112,6 +119,10 @@ router.post(
       room_id: room.id,
       owner_id: ownerId,
     };
+
+    if (insertPayload.status === undefined) {
+      insertPayload.status = DEFAULT_RESERVATION_STATUS;
+    }
 
     const { data, error } = await supabase
       .from('reservations')
@@ -162,6 +173,10 @@ router.put(
       property_id: property.id,
       room_id: room.id,
     };
+
+    if (updatePayload.status === undefined) {
+      delete updatePayload.status;
+    }
 
     const { data, error } = await supabase
       .from('reservations')
@@ -280,8 +295,8 @@ async function ensureRoomAvailability({ ownerId, roomId, startDate, endDate, exc
     .select('id, start_date, end_date')
     .eq('owner_id', ownerId)
     .eq('room_id', roomId)
-    .lte('start_date', endDate)
-    .gte('end_date', startDate);
+    .lt('start_date', endDate)
+    .gt('end_date', startDate);
 
   if (excludeReservationId) {
     query = query.neq('id', excludeReservationId);
@@ -296,4 +311,41 @@ async function ensureRoomAvailability({ ownerId, roomId, startDate, endDate, exc
   if (Array.isArray(data) && data.length > 0) {
     throw createHttpError(409, 'Room is already booked for the selected dates.');
   }
+}
+
+async function applyAutomaticPastStatus(reservations, ownerId) {
+  if (!Array.isArray(reservations) || reservations.length === 0) {
+    return reservations;
+  }
+
+  const now = new Date();
+  const idsToUpdate = [];
+
+  const normalized = reservations.map((reservation) => {
+    if (!reservation || !reservation.id || reservation.status === 'past') {
+      return reservation;
+    }
+
+    const endDate = reservation.end_date ? new Date(reservation.end_date) : null;
+    if (endDate && !Number.isNaN(endDate.getTime()) && endDate < now) {
+      idsToUpdate.push(reservation.id);
+      return { ...reservation, status: 'past' };
+    }
+
+    return reservation;
+  });
+
+  if (idsToUpdate.length > 0) {
+    const { error } = await supabase
+      .from('reservations')
+      .update({ status: 'past' })
+      .in('id', idsToUpdate)
+      .eq('owner_id', ownerId);
+
+    if (error) {
+      console.error('Failed to update reservations to past status', error);
+    }
+  }
+
+  return normalized;
 }

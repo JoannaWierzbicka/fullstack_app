@@ -61,6 +61,7 @@ export const translations = {
       allRooms: 'All rooms',
     },
     reservationCard: {
+      guestName: 'Guest',
       property: 'Property',
       room: 'Room',
       from: 'From',
@@ -75,6 +76,13 @@ export const translations = {
         delete: 'Delete',
       },
     },
+    reservationStatus: {
+      preliminary: 'Preliminary',
+      depositPaid: 'Deposit paid',
+      confirmed: 'Confirmed',
+      booking: 'Booking.com',
+      past: 'Past',
+    },
     reservationDetail: {
       title: 'Reservation Details',
       name: 'Name',
@@ -87,6 +95,7 @@ export const translations = {
       to: 'To',
       adults: 'Adults',
       children: 'Children',
+      status: 'Status',
       back: 'Back',
       delete: 'Delete',
       deleting: 'Deleting...',
@@ -114,6 +123,7 @@ export const translations = {
         price: 'Price (PLN)',
         adults: 'Adults',
         children: 'Children',
+        status: 'Reservation status',
       },
       errors: {
         firstName: 'First name is required.',
@@ -123,6 +133,7 @@ export const translations = {
         dateOrder: 'End date must be after the start date.',
         property: 'Property is required.',
         room: 'Room is required.',
+        status: 'Select reservation status.',
         generic: 'We were unable to save the reservation. Please try again.',
         conflict: 'Selected room is already booked for the chosen dates.',
       },
@@ -256,6 +267,7 @@ export const translations = {
       allRooms: 'Wszystkie pokoje',
     },
     reservationCard: {
+      guestName: 'Gość',
       property: 'Obiekt',
       room: 'Pokój',
       from: 'Od',
@@ -270,6 +282,13 @@ export const translations = {
         delete: 'Usuń',
       },
     },
+    reservationStatus: {
+      preliminary: 'Rezerwacja wstępna',
+      depositPaid: 'Zaliczka opłacona',
+      confirmed: 'Rezerwacja potwierdzona',
+      booking: 'Rezerwacja z Booking.com',
+      past: 'Rezerwacja przeszła',
+    },
     reservationDetail: {
       title: 'Szczegóły rezerwacji',
       name: 'Imię i nazwisko',
@@ -282,6 +301,7 @@ export const translations = {
       to: 'Do',
       adults: 'Dorośli',
       children: 'Dzieci',
+      status: 'Status',
       back: 'Wróć',
       delete: 'Usuń',
       deleting: 'Usuwanie...',
@@ -309,6 +329,7 @@ export const translations = {
         price: 'Cena (PLN)',
         adults: 'Dorośli',
         children: 'Dzieci',
+        status: 'Status rezerwacji',
       },
       errors: {
         firstName: 'Imię jest wymagane.',
@@ -318,6 +339,7 @@ export const translations = {
         dateOrder: 'Data zakończenia musi być późniejsza niż data rozpoczęcia.',
         property: 'Wybierz obiekt.',
         room: 'Wybierz pokój.',
+        status: 'Wybierz status rezerwacji.',
         generic: 'Nie udało się zapisać rezerwacji. Spróbuj ponownie.',
         conflict: 'Wybrany pokój jest już zajęty w podanym terminie.',
       },
