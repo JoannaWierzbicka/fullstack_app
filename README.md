@@ -1,6 +1,6 @@
-# Kalendarro
+# MyResCal
 
-Kalendarro is a full-stack reservation manager for property owners. It combines a Supabase-backed API with a responsive React front-end so you can create, edit and visualise bookings in a room-aware calendar.
+MyResCal is a full-stack reservation manager for property owners. It combines a Supabase-backed API with a responsive React front-end so you can create, edit and visualise bookings in a room-aware calendar.
 
 ---
 
@@ -185,4 +185,4 @@ npm run lint     # run ESLint
 
 ---
 
-Built with ♥ to keep your bookings organised — welcome to **Kalendarro**!
+Built with ♥ to keep your bookings organised — welcome to **MyResCal**!

@@ -20,7 +20,10 @@ export const translations = {
       createAccount: 'Create account',
     },
     footer: {
-      copyright: '© {{year}} Kalendarro',
+      copyright: '© {{year}} MyResCal',
+    },
+    loader: {
+      preparing: 'Preparing your stays...',
     },
     dashboard: {
       title: 'Dashboard',
@@ -38,6 +41,7 @@ export const translations = {
     },
     calendar: {
       room: 'Room',
+      date: 'Date',
       noRooms: 'No rooms available. Add rooms in Settings to see availability.',
       mobileHint: 'Tap a free day to add a reservation. Past days are disabled.',
       weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -59,8 +63,13 @@ export const translations = {
       deleteError: 'Failed to delete reservation.',
       filterByRoom: 'Filter by room',
       allRooms: 'All rooms',
+      deleteConfirmTitle: 'Delete reservation',
+      deleteConfirmMessage: 'Are you sure you want to delete this reservation? This action cannot be undone.',
+      confirm: 'Delete',
+      cancel: 'Cancel',
     },
     reservationCard: {
+      guestName: 'Guest',
       property: 'Property',
       room: 'Room',
       from: 'From',
@@ -75,6 +84,13 @@ export const translations = {
         delete: 'Delete',
       },
     },
+    reservationStatus: {
+      preliminary: 'Preliminary',
+      depositPaid: 'Deposit paid',
+      confirmed: 'Confirmed',
+      booking: 'Booking.com',
+      past: 'Past',
+    },
     reservationDetail: {
       title: 'Reservation Details',
       name: 'Name',
@@ -87,6 +103,7 @@ export const translations = {
       to: 'To',
       adults: 'Adults',
       children: 'Children',
+      status: 'Status',
       back: 'Back',
       delete: 'Delete',
       deleting: 'Deleting...',
@@ -114,6 +131,7 @@ export const translations = {
         price: 'Price (PLN)',
         adults: 'Adults',
         children: 'Children',
+        status: 'Reservation status',
       },
       errors: {
         firstName: 'First name is required.',
@@ -123,6 +141,7 @@ export const translations = {
         dateOrder: 'End date must be after the start date.',
         property: 'Property is required.',
         room: 'Room is required.',
+        status: 'Select reservation status.',
         generic: 'We were unable to save the reservation. Please try again.',
         conflict: 'Selected room is already booked for the chosen dates.',
       },
@@ -215,7 +234,10 @@ export const translations = {
       createAccount: 'Załóż konto',
     },
     footer: {
-      copyright: '© {{year}} Kalendarro',
+      copyright: '© {{year}} MyResCal',
+    },
+    loader: {
+      preparing: 'Przygotowujemy Twoje rezerwacje...',
     },
     dashboard: {
       title: 'Panel',
@@ -233,6 +255,7 @@ export const translations = {
     },
     calendar: {
       room: 'Pokój',
+      date: 'Data',
       noRooms: 'Brak dostępnych pokoi. Dodaj pokoje w ustawieniach, aby zobaczyć dostępność.',
       mobileHint: 'Dotknij wolnego dnia, aby dodać rezerwację. Przeszłe dni są zablokowane.',
       weekdays: ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz'],
@@ -254,8 +277,13 @@ export const translations = {
       deleteError: 'Nie udało się usunąć rezerwacji.',
       filterByRoom: 'Filtruj po pokoju',
       allRooms: 'Wszystkie pokoje',
+      deleteConfirmTitle: 'Usuń rezerwację',
+      deleteConfirmMessage: 'Czy na pewno chcesz usunąć tę rezerwację? Tej operacji nie można cofnąć.',
+      confirm: 'Usuń',
+      cancel: 'Anuluj',
     },
     reservationCard: {
+      guestName: 'Gość',
       property: 'Obiekt',
       room: 'Pokój',
       from: 'Od',
@@ -270,6 +298,13 @@ export const translations = {
         delete: 'Usuń',
       },
     },
+    reservationStatus: {
+      preliminary: 'Rezerwacja wstępna',
+      depositPaid: 'Zaliczka opłacona',
+      confirmed: 'Rezerwacja potwierdzona',
+      booking: 'Rezerwacja z Booking.com',
+      past: 'Rezerwacja przeszła',
+    },
     reservationDetail: {
       title: 'Szczegóły rezerwacji',
       name: 'Imię i nazwisko',
@@ -282,6 +317,7 @@ export const translations = {
       to: 'Do',
       adults: 'Dorośli',
       children: 'Dzieci',
+      status: 'Status',
       back: 'Wróć',
       delete: 'Usuń',
       deleting: 'Usuwanie...',
@@ -309,6 +345,7 @@ export const translations = {
         price: 'Cena (PLN)',
         adults: 'Dorośli',
         children: 'Dzieci',
+        status: 'Status rezerwacji',
       },
       errors: {
         firstName: 'Imię jest wymagane.',
@@ -318,6 +355,7 @@ export const translations = {
         dateOrder: 'Data zakończenia musi być późniejsza niż data rozpoczęcia.',
         property: 'Wybierz obiekt.',
         room: 'Wybierz pokój.',
+        status: 'Wybierz status rezerwacji.',
         generic: 'Nie udało się zapisać rezerwacji. Spróbuj ponownie.',
         conflict: 'Wybrany pokój jest już zajęty w podanym terminie.',
       },

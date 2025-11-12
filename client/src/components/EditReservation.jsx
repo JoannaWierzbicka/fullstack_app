@@ -5,6 +5,7 @@ import { updateReservation, loadReservations } from '../api/reservations.js';
 import { fetchProperties } from '../api/properties.js';
 import { fetchRooms } from '../api/rooms.js';
 import { useLocale } from '../context/LocaleContext.jsx';
+import { DEFAULT_RESERVATION_STATUS } from '../utils/reservationStatus.js';
 
 function EditReservation() {
   const reservation = useLoaderData();
@@ -99,6 +100,7 @@ function EditReservation() {
     ...reservation,
     property_id: reservation?.property_id || selectedPropertyId,
     room_id: reservation?.room_id || reservation?.room?.id || '',
+    status: reservation?.status || DEFAULT_RESERVATION_STATUS,
   }), [reservation, selectedPropertyId]);
 
   const handleSubmit = async (formValues) => {

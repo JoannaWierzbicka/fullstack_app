@@ -28,6 +28,7 @@ import {
   startOfWeek,
 } from 'date-fns';
 import { useLocale } from '../context/LocaleContext.jsx';
+import { getReservationStatusMeta } from '../utils/reservationStatus.js';
 
 const safeParseDate = (value) => {
   if (!value) return null;
@@ -132,7 +133,7 @@ const ReservationCalendar = ({
       </Box>
       <Box
         display="grid"
-        gridTemplateColumns={`160px repeat(${daysInMonth.length}, minmax(32px, 1fr))`}
+        gridTemplateColumns={`160px repeat(${daysInMonth.length}, minmax(0, 1fr))`}
         sx={{
           borderLeft: '1px solid',
           borderTop: '1px solid',
@@ -140,22 +141,58 @@ const ReservationCalendar = ({
           borderRadius: 1,
           overflow: 'hidden',
           minWidth: '100%',
+          position: 'relative',
         }}
       >
         <Box
           sx={{
+            position: 'relative',
             bgcolor: 'grey.200',
             borderRight: '1px solid',
             borderBottom: '1px solid',
             borderColor: 'grey.300',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: 40,
-            fontWeight: 600,
+            minHeight: 48,
+            overflow: 'hidden',
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              borderTop: '1px solid rgba(47, 42, 37, 0.3)',
+              borderLeft: 'none',
+              borderRight: 'none',
+              borderBottom: 'none',
+              transform: 'skewY(-45deg)',
+              transformOrigin: 'top left',
+            },
           }}
         >
-          <Typography variant="subtitle2">{t('calendar.room')}</Typography>
+          <Typography
+            variant="caption"
+            sx={{
+              position: 'absolute',
+              bottom: 6,
+              left: 8,
+              fontWeight: 700,
+              letterSpacing: '0.12em',
+            }}
+          >
+            {t('calendar.room').toUpperCase()}
+          </Typography>
+          <Typography
+            variant="caption"
+            sx={{
+              position: 'absolute',
+              top: 6,
+              right: 8,
+              fontWeight: 700,
+              letterSpacing: '0.12em',
+            }}
+          >
+            {t('calendar.date').toUpperCase()}
+          </Typography>
         </Box>
         {daysInMonth.map((day) => (
           <Box
@@ -164,11 +201,11 @@ const ReservationCalendar = ({
               borderRight: '1px solid',
               borderBottom: '1px solid',
               borderColor: 'grey.300',
-              bgcolor: 'grey.100',
-              minHeight: 40,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+          bgcolor: 'grey.100',
+          minHeight: 44,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
             }}
           >
             <Typography variant="caption">
@@ -196,7 +233,7 @@ const ReservationCalendar = ({
                 }}
               >
                 <Typography variant="subtitle2" noWrap>
-                  {room.propertyName ? `${room.propertyName} — ${room.name}` : room.name}
+                  {room.name}
                 </Typography>
               </Box>
 
@@ -220,24 +257,42 @@ const ReservationCalendar = ({
 
 export default ReservationCalendar;
 
+const buildInitials = (name, lastname) => {
+  const parts = `${name ?? ''} ${lastname ?? ''}`
+    .trim()
+    .split(' ')
+    .filter(Boolean);
+  if (parts.length === 0) return '';
+  return parts
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('');
+};
+
 const DayCell = ({ day, room, reservationsForRoom, onDayClick, onReservationSelect }) => {
   const reservation = reservationsForRoom.find((item) => {
     const start = safeParseDate(item.start_date);
     const end = safeParseDate(item.end_date);
     if (!start || !end) return false;
-    return isWithinInterval(day, { start, end });
+    const endInclusive = addDays(end, -1);
+    const effectiveEnd = endInclusive >= start ? endInclusive : start;
+    return isWithinInterval(day, { start, end: effectiveEnd });
   });
 
   const hasReservation = Boolean(reservation);
   const isStart = hasReservation && isSameDay(day, safeParseDate(reservation.start_date));
   const today = startOfToday();
   const isPast = !hasReservation && onDayClick && isBefore(day, today);
-  const reservationLength = hasReservation
-    ? differenceInCalendarDays(
-        safeParseDate(reservation.end_date),
-        safeParseDate(reservation.start_date),
-      ) + 1
-    : 0;
+  const startDate = hasReservation ? safeParseDate(reservation.start_date) : null;
+  const endDate = hasReservation ? safeParseDate(reservation.end_date) : null;
+  const inclusiveEnd = startDate && endDate ? addDays(endDate, -1) : null;
+  const effectiveEnd = inclusiveEnd && startDate && inclusiveEnd >= startDate ? inclusiveEnd : startDate;
+
+  const reservationLength = (() => {
+    if (!hasReservation || !startDate || !effectiveEnd) return hasReservation ? 1 : 0;
+    return differenceInCalendarDays(effectiveEnd, startDate) + 1;
+  })();
 
   const handleClick = () => {
     if (hasReservation) {
@@ -247,26 +302,37 @@ const DayCell = ({ day, room, reservationsForRoom, onDayClick, onReservationSele
     }
   };
 
+  const fullName = `${reservation?.name ?? ''} ${reservation?.lastname ?? ''}`.trim();
+  const initials = buildInitials(reservation?.name, reservation?.lastname);
+  const spanColumns = Math.max(reservationLength, 1);
+  const displayName = initials || fullName || reservation?.name || '';
+  const statusMeta = reservation ? getReservationStatusMeta(reservation.status) : null;
+  const blockColor = statusMeta?.background || '#235369';
+
   return (
     <Box
       sx={{
         position: 'relative',
         borderRight: '1px solid',
         borderBottom: '1px solid',
-        borderColor: hasReservation ? 'primary.light' : 'grey.300',
-        backgroundColor: hasReservation ? 'primary.light' : 'transparent',
-        minHeight: 40,
+        borderColor: hasReservation ? blockColor : 'grey.300',
+        backgroundColor: hasReservation ? blockColor : 'transparent',
+        minHeight: 48,
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        px: 0.5,
+        alignItems: 'stretch',
+        justifyContent: 'flex-start',
+        px: 0.6,
         cursor: hasReservation ? 'pointer' : isPast ? 'not-allowed' : onDayClick ? 'pointer' : 'default',
         color: hasReservation ? '#fff' : 'inherit',
         borderTopLeftRadius: isStart ? 6 : 0,
         borderBottomLeftRadius: isStart ? 6 : 0,
-        borderTopRightRadius: hasReservation && isSameDay(day, safeParseDate(reservation.end_date)) ? 6 : 0,
-        borderBottomRightRadius: hasReservation && isSameDay(day, safeParseDate(reservation.end_date)) ? 6 : 0,
+        borderTopRightRadius:
+          hasReservation && effectiveEnd && isSameDay(day, effectiveEnd) ? 6 : 0,
+        borderBottomRightRadius:
+          hasReservation && effectiveEnd && isSameDay(day, effectiveEnd) ? 6 : 0,
         transition: 'background-color 0.2s ease',
+        overflow: 'visible',
+        zIndex: isStart ? 10 : hasReservation ? 5 : 1,
         '&:hover':
           !hasReservation && !isPast && onDayClick
             ? {
@@ -277,23 +343,36 @@ const DayCell = ({ day, room, reservationsForRoom, onDayClick, onReservationSele
       onClick={handleClick}
     >
       {hasReservation && isStart && (
-        <Typography
-          variant="caption"
+        <Box
           sx={{
-            fontWeight: 600,
-            color: 'common.white',
-            textShadow: '0 1px 2px rgba(0,0,0,0.2)',
-            width: '100%',
-            textAlign: 'left',
-            pl: 0.5,
-            pr: 0.5,
-            whiteSpace: reservationLength <= 1 ? 'nowrap' : 'normal',
-            overflow: reservationLength <= 1 ? 'hidden' : 'visible',
-            textOverflow: reservationLength <= 1 ? 'ellipsis' : 'unset',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            height: '100%',
+            width: `calc(100% * ${spanColumns})`,
+            display: 'flex',
+            alignItems: 'center',
+            pl: 0.6,
+            pr: 0.8,
+            pointerEvents: 'none',
+            zIndex: 15,
           }}
         >
-          {`${reservation.name ?? ''} ${reservation.lastname ?? ''}`.trim()}
-        </Typography>
+          <Typography
+            variant="caption"
+            noWrap
+            sx={{
+              fontWeight: 600,
+              color: 'common.white',
+              textShadow: '0 1px 2px rgba(0,0,0,0.2)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              maxWidth: '100%',
+            }}
+          >
+            {displayName}
+          </Typography>
+        </Box>
       )}
     </Box>
   );
@@ -423,14 +502,22 @@ const MobileDayCell = ({
     const start = safeParseDate(item.start_date);
     const end = safeParseDate(item.end_date);
     if (!start || !end) return false;
-    return isWithinInterval(day, { start, end });
+    const endInclusive = addDays(end, -1);
+    const effectiveEnd = endInclusive >= start ? endInclusive : start;
+    return isWithinInterval(day, { start, end: effectiveEnd });
   });
 
   const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
   const isPast = isBefore(day, today);
   const hasReservation = Boolean(reservation);
   const label = format(day, 'd', { locale: dateLocale });
-  const isStart = hasReservation && isSameDay(day, safeParseDate(reservation.start_date));
+  const startDate = hasReservation ? safeParseDate(reservation.start_date) : null;
+  const endDate = hasReservation ? safeParseDate(reservation.end_date) : null;
+  const inclusiveEnd = startDate && endDate ? addDays(endDate, -1) : null;
+  const effectiveEnd = inclusiveEnd && startDate && inclusiveEnd >= startDate ? inclusiveEnd : startDate;
+  const isStart = hasReservation && startDate && isSameDay(day, startDate);
+  const statusMeta = reservation ? getReservationStatusMeta(reservation.status) : null;
+  const blockColor = statusMeta?.background || '#235369';
 
   const handleClick = () => {
     if (hasReservation) {
@@ -447,8 +534,8 @@ const MobileDayCell = ({
         minHeight: 60,
         borderRadius: 1,
         border: '1px solid',
-        borderColor: hasReservation ? 'primary.main' : 'grey.300',
-        backgroundColor: hasReservation ? 'primary.light' : 'background.paper',
+        borderColor: hasReservation ? blockColor : 'grey.300',
+        backgroundColor: hasReservation ? blockColor : 'background.paper',
         color: isPast && !hasReservation ? 'text.disabled' : 'inherit',
         opacity: isCurrentMonth ? 1 : 0.4,
         p: 0.75,
@@ -467,7 +554,7 @@ const MobileDayCell = ({
           sx={{
             fontWeight: 600,
             color: 'common.white',
-            backgroundColor: 'primary.main',
+            backgroundColor: blockColor,
             borderRadius: 0.5,
             px: 0.5,
             py: 0.25,
@@ -475,7 +562,7 @@ const MobileDayCell = ({
             display: isStart ? 'inline-flex' : 'none',
           }}
         >
-          {`${reservation.name ?? ''} ${reservation.lastname ?? ''}`.trim()}
+          {buildInitials(reservation?.name, reservation?.lastname) || `${reservation.name ?? ''}`.trim()}
         </Typography>
       )}
     </Box>

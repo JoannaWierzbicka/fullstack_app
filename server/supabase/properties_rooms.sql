@@ -18,15 +18,38 @@ create table if not exists public.rooms (
 -- Reservations adjustments
 alter table public.reservations
   add column if not exists property_id uuid,
-  add column if not exists room_id uuid;
+  add column if not exists room_id uuid,
+  add column if not exists status text default 'preliminary';
 
-alter table public.reservations
-  add constraint reservations_property_fk foreign key (property_id)
-  references public.properties(id) on delete set null;
+update public.reservations
+  set status = coalesce(status, 'preliminary');
 
-alter table public.reservations
-  add constraint reservations_room_fk foreign key (room_id)
-  references public.rooms(id) on delete set null;
+do $$
+begin
+  alter table public.reservations
+    add constraint reservations_status_check
+    check (status in ('preliminary', 'deposit_paid', 'confirmed', 'booking', 'past'));
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter table public.reservations
+    add constraint reservations_property_fk foreign key (property_id)
+    references public.properties(id) on delete set null;
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter table public.reservations
+    add constraint reservations_room_fk foreign key (room_id)
+    references public.rooms(id) on delete set null;
+exception
+  when duplicate_object then null;
+end $$;
 
 -- Ensure owner_id columns exist on supporting tables
 alter table public.properties
@@ -46,14 +69,24 @@ create index if not exists reservations_room_idx on public.reservations(room_id)
 alter table public.properties enable row level security;
 alter table public.rooms enable row level security;
 
-create policy if not exists "Users manage own properties" on public.properties
-  for all
-  using (auth.uid() = owner_id)
-  with check (auth.uid() = owner_id);
+do $$
+begin
+  create policy "Users manage own properties" on public.properties
+    for all
+    using (auth.uid() = owner_id)
+    with check (auth.uid() = owner_id);
+exception
+  when duplicate_object then null;
+end $$;
 
-create policy if not exists "Users manage own rooms" on public.rooms
-  for all
-  using (auth.uid() = owner_id)
-  with check (auth.uid() = owner_id);
+do $$
+begin
+  create policy "Users manage own rooms" on public.rooms
+    for all
+    using (auth.uid() = owner_id)
+    with check (auth.uid() = owner_id);
+exception
+  when duplicate_object then null;
+end $$;
 
 -- Ensure reservations policy also checks owner across joins (manually adjust if needed)

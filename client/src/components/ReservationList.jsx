@@ -7,6 +7,10 @@ import {
   Card,
   CardActions,
   CardContent,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   FormControl,
   InputLabel,
   MenuItem,
@@ -14,6 +18,7 @@ import {
   Snackbar,
   Typography,
 } from '@mui/material';
+import LocalPostOfficeIcon from '@mui/icons-material/LocalPostOffice';
 import ReservationCard from './ReservationCard.jsx';
 import { useLocale } from '../context/LocaleContext.jsx';
 
@@ -43,6 +48,8 @@ function ReservationList({
   const [sortBy, setSortBy] = useState('date');
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
   const [toast, setToast] = useState(null);
+  const [confirmReservation, setConfirmReservation] = useState(null);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const collator = useMemo(
     () => new Intl.Collator(language === 'pl' ? 'pl-PL' : 'en-US', { sensitivity: 'base' }),
     [language],
@@ -75,24 +82,34 @@ function ReservationList({
     return items.sort(sorter);
   }, [reservationsFilteredByRoom, sortBy]);
 
-  const handleDelete = async (reservation) => {
+  const requestDelete = (reservation) => {
     if (!reservation?.id) return;
-    const confirmed = window.confirm(t('reservationList.deleteConfirm'));
-    if (!confirmed) return;
+    setConfirmReservation(reservation);
+  };
 
-    setPendingDeleteId(reservation.id);
+  const closeDeleteDialog = () => {
+    if (isConfirmingDelete) return;
+    setConfirmReservation(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmReservation?.id) return;
+    setIsConfirmingDelete(true);
+    setPendingDeleteId(confirmReservation.id);
     try {
       if (!onDeleteReservation) {
         throw new Error(t('reservationList.deleteError'));
       }
-      await onDeleteReservation?.(reservation.id);
+      await onDeleteReservation(confirmReservation.id);
       setToast({ type: 'success', message: t('reservationList.deleteSuccess') });
+      setConfirmReservation(null);
     } catch (error) {
       setToast({
         type: 'error',
         message: error.message || t('reservationList.deleteError'),
       });
     } finally {
+      setIsConfirmingDelete(false);
       setPendingDeleteId(null);
     }
   };
@@ -108,13 +125,21 @@ function ReservationList({
         display="flex"
         justifyContent="space-between"
         alignItems="stretch"
-        mb={3}
+        mb={4}
         flexDirection={{ xs: 'column', md: 'row' }}
-        gap={2.5}
+        gap={3}
       >
         <Box sx={{ flexGrow: 1 }}>
           {showHeader && (
-            <Typography variant="h5" component="h2" sx={{ fontSize: { xs: '1.5rem', sm: '1.75rem' } }}>
+            <Typography
+              variant="h4"
+              component="h2"
+              sx={{
+                fontSize: { xs: '1.8rem', sm: '2rem' },
+                letterSpacing: '0.12rem',
+                textTransform: 'uppercase',
+              }}
+            >
               {t('reservationList.title')}
             </Typography>
           )}
@@ -122,10 +147,18 @@ function ReservationList({
 
         <Box
           display="flex"
-          flexDirection={{ xs: 'column', sm: 'row' }}
+          flexDirection={{ xs: 'column', lg: 'row' }}
           gap={2}
-          alignItems={{ xs: 'stretch', sm: 'center' }}
-          sx={{ width: { xs: '100%', md: 'auto' } }}
+          alignItems={{ xs: 'stretch', lg: 'center' }}
+          sx={{
+            width: { xs: '100%', md: 'auto' },
+            backgroundColor: 'rgba(251, 247, 240, 0.85)',
+            borderRadius: 30,
+            border: '1px solid rgba(195, 111, 43, 0.35)',
+            boxShadow: '0 18px 40px rgba(25, 41, 49, 0.16)',
+            px: { xs: 2, md: 3 },
+            py: { xs: 2, md: 2.5 },
+          }}
         >
           {hasRoomFilter && (
             <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 200 } }}>
@@ -166,7 +199,8 @@ function ReservationList({
 
           <Button
             variant="contained"
-            color="secondary"
+            color="info"
+            startIcon={<LocalPostOfficeIcon />}
             onClick={() => onAddReservation?.()}
             disabled={!canAdd || !onAddReservation}
             sx={{ width: { xs: '100%', sm: 'auto' } }}
@@ -177,14 +211,23 @@ function ReservationList({
       </Box>
 
       {sortedReservations.length === 0 ? (
-        <Card>
+        <Card
+          sx={{
+            background: 'linear-gradient(135deg, rgba(251, 245, 234, 0.94), rgba(233, 220, 198, 0.9))',
+            border: '2px dashed rgba(195, 111, 43, 0.35)',
+            textAlign: 'center',
+          }}
+        >
           <CardContent>
-            <Typography>{t('reservationList.empty')}</Typography>
+            <Typography sx={{ mb: 2 }}>{t('reservationList.empty')}</Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('reservationList.addFirst')}
+            </Typography>
           </CardContent>
           <CardActions>
             <Button
               variant="contained"
-              color="secondary"
+              color="info"
               onClick={() => onAddReservation?.()}
               disabled={!canAdd || !onAddReservation}
             >
@@ -217,7 +260,7 @@ function ReservationList({
                 reservation={reservation}
                 onView={() => navigate(`/dashboard/detail/${reservation.id}`)}
                 onEdit={() => onEditReservation?.(reservation)}
-                onDelete={() => handleDelete(reservation)}
+                onDelete={() => requestDelete(reservation)}
                 disabled={pendingDeleteId === reservation.id}
               />
             </Box>
@@ -237,6 +280,27 @@ function ReservationList({
           </Alert>
         ) : null}
       </Snackbar>
+      <Dialog open={Boolean(confirmReservation)} onClose={closeDeleteDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>{t('reservationList.deleteConfirmTitle')}</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">
+            {t('reservationList.deleteConfirmMessage')}
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={closeDeleteDialog} disabled={isConfirmingDelete}>
+            {t('reservationList.cancel')}
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleConfirmDelete}
+            disabled={isConfirmingDelete}
+          >
+            {t('reservationList.confirm')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

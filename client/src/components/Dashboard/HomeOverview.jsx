@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import ReservationCalendar from '../ReservationCalendar.jsx';
 import ReservationList from '../ReservationList.jsx';
 import ReservationFormDialog from '../ReservationFormDialog.jsx';
+import AppLoader from '../AppLoader.jsx';
 import { fetchProperties } from '../../api/properties.js';
 import { fetchRooms } from '../../api/rooms.js';
 import {
@@ -51,6 +52,7 @@ export default function HomeOverview() {
     reservation: null,
     initialValues: null,
   });
+  const showLoaderOverlay = loadingProperties || loadingRooms || loadingReservations;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -288,7 +290,34 @@ export default function HomeOverview() {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <Box sx={{ position: 'relative' }}>
+      {showLoaderOverlay ? (
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 20,
+            background: 'rgba(245, 237, 220, 0.88)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <AppLoader label={t('loader.preparing')} />
+        </Box>
+      ) : null}
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 3,
+          px: { xs: 1, sm: 1.5, md: 2 },
+          pt: { xs: 1, sm: 1.5, md: 2 },
+          opacity: showLoaderOverlay ? 0.35 : 1,
+          pointerEvents: showLoaderOverlay ? 'none' : 'auto',
+          transition: 'opacity 0.3s ease',
+        }}
+      >
       <Stack
         direction={{ xs: 'column', md: 'row' }}
         alignItems={{ xs: 'stretch', md: 'center' }}
@@ -360,14 +389,15 @@ export default function HomeOverview() {
                   selectedProperty ? `— ${selectedProperty.name}` : ''
                 }`}
               </Typography>
-              <Button
-                variant="contained"
-                disabled={rooms.length === 0}
-                onClick={() =>
-                  openCreateDialog({
-                    property_id: selectedPropertyId,
-                    room_id: roomFilterId !== 'all' ? roomFilterId : undefined,
-                  })
+        <Button
+          variant="contained"
+          disabled={rooms.length === 0}
+          color="info"
+          onClick={() =>
+            openCreateDialog({
+              property_id: selectedPropertyId,
+              room_id: roomFilterId !== 'all' ? roomFilterId : undefined,
+            })
                 }
                 sx={{ width: { xs: '100%', sm: 'auto' } }}
               >
@@ -432,39 +462,40 @@ export default function HomeOverview() {
         </>
       )}
 
-      {dialogState.open && (
-        <ReservationFormDialog
-          title={
-            dialogState.mode === 'create'
-              ? t('reservationForm.addTitle')
-              : t('reservationForm.editTitle')
-          }
-          initialValues={dialogState.initialValues}
-          submitLabel={
-            dialogState.mode === 'create'
-              ? t('reservationForm.submitCreate')
-              : t('reservationForm.submitSave')
-          }
-          submittingLabel={
-            dialogState.mode === 'create'
-              ? t('reservationForm.submitCreating')
-              : t('reservationForm.submitSaving')
-          }
-          onSubmit={dialogSubmit}
-          onCancel={closeDialog}
-          properties={properties}
-          rooms={rooms}
-          onPropertyChange={(propertyId) => {
-            setSelectedPropertyId(propertyId);
-            setRoomFilterId('all');
-          }}
-          loadingProperties={loadingProperties}
-          loadingRooms={loadingRooms}
-          minDate={dialogState.mode === 'create' ? formatDateInput(startOfToday()) : undefined}
-          existingReservations={reservations}
-          reservationId={dialogState.reservation?.id}
-        />
-      )}
+        {dialogState.open && (
+          <ReservationFormDialog
+            title={
+              dialogState.mode === 'create'
+                ? t('reservationForm.addTitle')
+                : t('reservationForm.editTitle')
+            }
+            initialValues={dialogState.initialValues}
+            submitLabel={
+              dialogState.mode === 'create'
+                ? t('reservationForm.submitCreate')
+                : t('reservationForm.submitSave')
+            }
+            submittingLabel={
+              dialogState.mode === 'create'
+                ? t('reservationForm.submitCreating')
+                : t('reservationForm.submitSaving')
+            }
+            onSubmit={dialogSubmit}
+            onCancel={closeDialog}
+            properties={properties}
+            rooms={rooms}
+            onPropertyChange={(propertyId) => {
+              setSelectedPropertyId(propertyId);
+              setRoomFilterId('all');
+            }}
+            loadingProperties={loadingProperties}
+            loadingRooms={loadingRooms}
+            minDate={dialogState.mode === 'create' ? formatDateInput(startOfToday()) : undefined}
+            existingReservations={reservations}
+            reservationId={dialogState.reservation?.id}
+          />
+        )}
+      </Box>
     </Box>
   );
 }

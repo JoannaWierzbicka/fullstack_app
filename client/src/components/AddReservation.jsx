@@ -6,6 +6,7 @@ import { fetchProperties } from '../api/properties.js';
 import { fetchRooms } from '../api/rooms.js';
 import { addDays, format, startOfToday } from 'date-fns';
 import { useLocale } from '../context/LocaleContext.jsx';
+import { DEFAULT_RESERVATION_STATUS } from '../utils/reservationStatus.js';
 
 const formatDateInput = (date) => format(date, 'yyyy-MM-dd');
 
@@ -97,6 +98,7 @@ function AddReservation() {
       property_id: selectedPropertyId,
       start_date: formatDateInput(today),
       end_date: formatDateInput(addDays(today, 1)),
+      status: DEFAULT_RESERVATION_STATUS,
     };
   }, [selectedPropertyId]);
 
