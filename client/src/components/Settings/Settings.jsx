@@ -6,6 +6,10 @@ import {
   Card,
   CardActions,
   CardContent,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   IconButton,
   List,
@@ -44,6 +48,8 @@ export default function Settings() {
   const [roomDialogOpen, setRoomDialogOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState(null);
   const [editingRoom, setEditingRoom] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { t } = useLocale();
 
   useEffect(() => {
@@ -105,19 +111,16 @@ export default function Settings() {
     setPropertiesError(null);
   };
 
-  const handleDeleteProperty = async (id) => {
-    if (!window.confirm(t('settings.deletePropertyConfirm'))) return;
+  const deletePropertyById = async (id) => {
     await deleteProperty(id);
     setProperties((prev) => {
       const next = prev.filter((item) => item.id !== id);
       if (selectedPropertyId === id) {
-        setSelectedPropertyId(next.length > 0 ? next[0].id : null);
+        setSelectedPropertyId(next[0]?.id ?? null);
+        setRooms([]);
       }
       return next;
     });
-    if (selectedPropertyId === id) {
-      setRooms([]);
-    }
     setPropertiesError(null);
   };
 
@@ -139,11 +142,48 @@ export default function Settings() {
     setRoomsError(null);
   };
 
-  const handleDeleteRoom = async (id) => {
-    if (!window.confirm(t('settings.deleteRoomConfirm'))) return;
+  const deleteRoomById = async (id) => {
     await deleteRoom(id);
     setRooms((prev) => prev.filter((room) => room.id !== id));
     setRoomsError(null);
+  };
+
+  const requestDeleteProperty = (property) => {
+    setConfirmDialog({ type: 'property', entity: property });
+  };
+
+  const requestDeleteRoom = (room) => {
+    setConfirmDialog({ type: 'room', entity: room });
+  };
+
+  const closeConfirmDialog = () => {
+    if (isDeleting) return;
+    setConfirmDialog(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDialog?.entity) return;
+    setIsDeleting(true);
+    try {
+      if (confirmDialog.type === 'property') {
+        await deletePropertyById(confirmDialog.entity.id);
+      } else {
+        await deleteRoomById(confirmDialog.entity.id);
+      }
+    } catch (error) {
+      const fallback =
+        confirmDialog.type === 'property'
+          ? t('settings.deletePropertyConfirm')
+          : t('settings.deleteRoomConfirm');
+      if (confirmDialog.type === 'property') {
+        setPropertiesError(error.message || fallback);
+      } else {
+        setRoomsError(error.message || fallback);
+      }
+    } finally {
+      setIsDeleting(false);
+      setConfirmDialog(null);
+    }
   };
 
   const roomsHeading = useMemo(
@@ -172,7 +212,8 @@ export default function Settings() {
             flex: { xs: '1 1 100%', lg: '1 1 40%' },
             minWidth: { xs: '100%', lg: 0 },
             borderRadius: 5,
-            padding: { xs: 2.5, sm: 3.5 },
+            px: { xs: 3, sm: 4, lg: 4.5 },
+            py: { xs: 3.2, sm: 3.8, lg: 4.2 },
           }}
         >
           <CardContent
@@ -214,7 +255,14 @@ export default function Settings() {
             ) : propertiesError ? (
               <Alert severity="error">{propertiesError}</Alert>
             ) : (
-              <List disablePadding sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1, sm: 1.2 } }}>
+              <List
+                disablePadding
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: { xs: 1.2, sm: 1.4 },
+                }}
+              >
                 {properties.map((property) => (
                   <ListItem
                     key={property.id}
@@ -234,25 +282,25 @@ export default function Settings() {
                         <IconButton
                           edge="end"
                           aria-label={t('reservationCard.actions.delete')}
-                          onClick={() => handleDeleteProperty(property.id)}
+                          onClick={() => requestDeleteProperty(property)}
                         >
                           <Delete fontSize="small" />
                         </IconButton>
                       </Stack>
                     }
                   >
-                    <ListItemButton
-                      selected={property.id === selectedPropertyId}
-                      onClick={() => setSelectedPropertyId(property.id)}
-                      sx={{
-                        borderRadius: 3,
-                        px: { xs: 2, sm: 2.5 },
-                        py: { xs: 1.2, sm: 1.4 },
-                        '&.Mui-selected': {
-                          backgroundColor: 'rgba(51, 180, 172, 0.14)',
-                        },
-                      }}
-                    >
+                      <ListItemButton
+                        selected={property.id === selectedPropertyId}
+                        onClick={() => setSelectedPropertyId(property.id)}
+                        sx={{
+                          borderRadius: 3,
+                          px: { xs: 2.4, sm: 2.8 },
+                          py: { xs: 1.4, sm: 1.6 },
+                          '&.Mui-selected': {
+                            backgroundColor: 'rgba(51, 180, 172, 0.14)',
+                          },
+                        }}
+                      >
                       <ListItemText
                         primary={property.name}
                         secondary={property.description}
@@ -277,7 +325,8 @@ export default function Settings() {
             flex: { xs: '1 1 100%', lg: '1 1 60%' },
             minWidth: { xs: '100%', lg: 0 },
             borderRadius: 5,
-            padding: { xs: 2.5, sm: 3.5 },
+            px: { xs: 3, sm: 4, lg: 4.5 },
+            py: { xs: 3.2, sm: 3.8, lg: 4.2 },
           }}
         >
           <CardContent
@@ -326,14 +375,21 @@ export default function Settings() {
                 {t('settings.emptyRooms')}
               </Typography>
             ) : (
-              <List disablePadding sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1, sm: 1.2 } }}>
+              <List
+                disablePadding
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: { xs: 1.2, sm: 1.4 },
+                }}
+              >
                 {rooms.map((room, index) => (
                   <Box key={room.id}>
                     <ListItem
                       disablePadding
                       sx={{
-                        px: { xs: 2, sm: 2.5 },
-                        py: { xs: 1.1, sm: 1.3 },
+                        px: { xs: 2.4, sm: 2.8 },
+                        py: { xs: 1.2, sm: 1.4 },
                         borderRadius: 3,
                         '&:hover': {
                           backgroundColor: 'rgba(51, 180, 172, 0.08)',
@@ -354,7 +410,7 @@ export default function Settings() {
                         <IconButton
                           edge="end"
                           aria-label={t('reservationCard.actions.delete')}
-                          onClick={() => handleDeleteRoom(room.id)}
+                          onClick={() => requestDeleteRoom(room)}
                         >
                           <Delete fontSize="small" />
                         </IconButton>
@@ -369,7 +425,7 @@ export default function Settings() {
                     {index < rooms.length - 1 && (
                       <Divider
                         component="li"
-                        sx={{ mx: { xs: 2, sm: 2.5 }, borderColor: 'rgba(195, 111, 43, 0.2)' }}
+                        sx={{ mx: { xs: 2.4, sm: 2.8 }, borderColor: 'rgba(195, 111, 43, 0.2)' }}
                       />
                     )}
                   </Box>
@@ -377,7 +433,7 @@ export default function Settings() {
               </List>
             )}
           </CardContent>
-          <CardActions sx={{ px: 0, pt: 1 }}>
+          <CardActions sx={{ px: { xs: 0, sm: 0 }, pt: 1 }}>
             <Typography variant="caption" color="text.secondary" sx={{ px: { xs: 1, sm: 0 } }}>
               {t('settings.roomsInfo')}
             </Typography>
@@ -405,6 +461,39 @@ export default function Settings() {
         initialValues={editingRoom}
         properties={properties}
       />
+
+      <Dialog open={Boolean(confirmDialog)} onClose={closeConfirmDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>
+          {confirmDialog?.type === 'property'
+            ? t('settings.deletePropertyTitle')
+            : t('settings.deleteRoomTitle')}
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">
+            {confirmDialog?.type === 'property'
+              ? t('settings.deletePropertyConfirm')
+              : t('settings.deleteRoomConfirm')}
+          </Typography>
+          {confirmDialog?.entity?.name && (
+            <Typography variant="subtitle2" sx={{ mt: 1.5 }}>
+              {confirmDialog.entity.name}
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={closeConfirmDialog} disabled={isDeleting}>
+            {t('reservationList.cancel')}
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleConfirmDelete}
+            disabled={isDeleting}
+          >
+            {isDeleting ? t('reservationDetail.deleting') : t('reservationList.confirm')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
