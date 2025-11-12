@@ -28,6 +28,7 @@ import {
   startOfWeek,
 } from 'date-fns';
 import { useLocale } from '../context/LocaleContext.jsx';
+import { getReservationStatusMeta } from '../utils/reservationStatus.js';
 
 const safeParseDate = (value) => {
   if (!value) return null;
@@ -140,22 +141,58 @@ const ReservationCalendar = ({
           borderRadius: 1,
           overflow: 'hidden',
           minWidth: '100%',
+          position: 'relative',
         }}
       >
         <Box
           sx={{
+            position: 'relative',
             bgcolor: 'grey.200',
             borderRight: '1px solid',
             borderBottom: '1px solid',
             borderColor: 'grey.300',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: 40,
-            fontWeight: 600,
+            minHeight: 48,
+            overflow: 'hidden',
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              borderTop: '1px solid rgba(47, 42, 37, 0.3)',
+              borderLeft: 'none',
+              borderRight: 'none',
+              borderBottom: 'none',
+              transform: 'skewY(-45deg)',
+              transformOrigin: 'top left',
+            },
           }}
         >
-          <Typography variant="subtitle2">{t('calendar.room')}</Typography>
+          <Typography
+            variant="caption"
+            sx={{
+              position: 'absolute',
+              bottom: 6,
+              left: 8,
+              fontWeight: 700,
+              letterSpacing: '0.12em',
+            }}
+          >
+            {t('calendar.room').toUpperCase()}
+          </Typography>
+          <Typography
+            variant="caption"
+            sx={{
+              position: 'absolute',
+              top: 6,
+              right: 8,
+              fontWeight: 700,
+              letterSpacing: '0.12em',
+            }}
+          >
+            {t('calendar.date').toUpperCase()}
+          </Typography>
         </Box>
         {daysInMonth.map((day) => (
           <Box
@@ -196,7 +233,7 @@ const ReservationCalendar = ({
                 }}
               >
                 <Typography variant="subtitle2" noWrap>
-                  {room.propertyName ? `${room.propertyName} — ${room.name}` : room.name}
+                  {room.name}
                 </Typography>
               </Box>
 
@@ -269,6 +306,8 @@ const DayCell = ({ day, room, reservationsForRoom, onDayClick, onReservationSele
   const initials = buildInitials(reservation?.name, reservation?.lastname);
   const spanColumns = Math.max(reservationLength, 1);
   const displayName = initials || fullName || reservation?.name || '';
+  const statusMeta = reservation ? getReservationStatusMeta(reservation.status) : null;
+  const blockColor = statusMeta?.background || '#235369';
 
   return (
     <Box
@@ -276,8 +315,8 @@ const DayCell = ({ day, room, reservationsForRoom, onDayClick, onReservationSele
         position: 'relative',
         borderRight: '1px solid',
         borderBottom: '1px solid',
-        borderColor: hasReservation ? 'primary.light' : 'grey.300',
-        backgroundColor: hasReservation ? 'primary.light' : 'transparent',
+        borderColor: hasReservation ? blockColor : 'grey.300',
+        backgroundColor: hasReservation ? blockColor : 'transparent',
         minHeight: 48,
         display: 'flex',
         alignItems: 'stretch',
@@ -477,6 +516,8 @@ const MobileDayCell = ({
   const inclusiveEnd = startDate && endDate ? addDays(endDate, -1) : null;
   const effectiveEnd = inclusiveEnd && startDate && inclusiveEnd >= startDate ? inclusiveEnd : startDate;
   const isStart = hasReservation && startDate && isSameDay(day, startDate);
+  const statusMeta = reservation ? getReservationStatusMeta(reservation.status) : null;
+  const blockColor = statusMeta?.background || '#235369';
 
   const handleClick = () => {
     if (hasReservation) {
@@ -493,8 +534,8 @@ const MobileDayCell = ({
         minHeight: 60,
         borderRadius: 1,
         border: '1px solid',
-        borderColor: hasReservation ? 'primary.main' : 'grey.300',
-        backgroundColor: hasReservation ? 'primary.light' : 'background.paper',
+        borderColor: hasReservation ? blockColor : 'grey.300',
+        backgroundColor: hasReservation ? blockColor : 'background.paper',
         color: isPast && !hasReservation ? 'text.disabled' : 'inherit',
         opacity: isCurrentMonth ? 1 : 0.4,
         p: 0.75,
@@ -513,7 +554,7 @@ const MobileDayCell = ({
           sx={{
             fontWeight: 600,
             color: 'common.white',
-            backgroundColor: 'primary.main',
+            backgroundColor: blockColor,
             borderRadius: 0.5,
             px: 0.5,
             py: 0.25,

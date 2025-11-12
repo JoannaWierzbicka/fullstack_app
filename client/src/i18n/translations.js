@@ -22,6 +22,9 @@ export const translations = {
     footer: {
       copyright: '© {{year}} MyResCal',
     },
+    loader: {
+      preparing: 'Preparing your stays...',
+    },
     dashboard: {
       title: 'Dashboard',
       subtitle: 'Track availability and manage bookings across your properties.',
@@ -38,6 +41,7 @@ export const translations = {
     },
     calendar: {
       room: 'Room',
+      date: 'Date',
       noRooms: 'No rooms available. Add rooms in Settings to see availability.',
       mobileHint: 'Tap a free day to add a reservation. Past days are disabled.',
       weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -59,6 +63,10 @@ export const translations = {
       deleteError: 'Failed to delete reservation.',
       filterByRoom: 'Filter by room',
       allRooms: 'All rooms',
+      deleteConfirmTitle: 'Delete reservation',
+      deleteConfirmMessage: 'Are you sure you want to delete this reservation? This action cannot be undone.',
+      confirm: 'Delete',
+      cancel: 'Cancel',
     },
     reservationCard: {
       guestName: 'Guest',
@@ -228,6 +236,9 @@ export const translations = {
     footer: {
       copyright: '© {{year}} MyResCal',
     },
+    loader: {
+      preparing: 'Przygotowujemy Twoje rezerwacje...',
+    },
     dashboard: {
       title: 'Panel',
       subtitle: 'Śledź dostępność i zarządzaj rezerwacjami we wszystkich obiektach.',
@@ -244,6 +255,7 @@ export const translations = {
     },
     calendar: {
       room: 'Pokój',
+      date: 'Data',
       noRooms: 'Brak dostępnych pokoi. Dodaj pokoje w ustawieniach, aby zobaczyć dostępność.',
       mobileHint: 'Dotknij wolnego dnia, aby dodać rezerwację. Przeszłe dni są zablokowane.',
       weekdays: ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz'],
@@ -265,6 +277,10 @@ export const translations = {
       deleteError: 'Nie udało się usunąć rezerwacji.',
       filterByRoom: 'Filtruj po pokoju',
       allRooms: 'Wszystkie pokoje',
+      deleteConfirmTitle: 'Usuń rezerwację',
+      deleteConfirmMessage: 'Czy na pewno chcesz usunąć tę rezerwację? Tej operacji nie można cofnąć.',
+      confirm: 'Usuń',
+      cancel: 'Anuluj',
     },
     reservationCard: {
       guestName: 'Gość',

@@ -175,7 +175,7 @@ function ReservationFormDialog({
         return false;
       }
 
-      return reservationStart <= end && reservationEnd >= start;
+      return reservationStart < end && reservationEnd > start;
     });
   }, [existingReservations, formValues, reservationId]);
 

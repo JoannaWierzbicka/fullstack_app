@@ -7,6 +7,10 @@ import {
   Card,
   CardActions,
   CardContent,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   FormControl,
   InputLabel,
   MenuItem,
@@ -44,6 +48,8 @@ function ReservationList({
   const [sortBy, setSortBy] = useState('date');
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
   const [toast, setToast] = useState(null);
+  const [confirmReservation, setConfirmReservation] = useState(null);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const collator = useMemo(
     () => new Intl.Collator(language === 'pl' ? 'pl-PL' : 'en-US', { sensitivity: 'base' }),
     [language],
@@ -76,24 +82,34 @@ function ReservationList({
     return items.sort(sorter);
   }, [reservationsFilteredByRoom, sortBy]);
 
-  const handleDelete = async (reservation) => {
+  const requestDelete = (reservation) => {
     if (!reservation?.id) return;
-    const confirmed = window.confirm(t('reservationList.deleteConfirm'));
-    if (!confirmed) return;
+    setConfirmReservation(reservation);
+  };
 
-    setPendingDeleteId(reservation.id);
+  const closeDeleteDialog = () => {
+    if (isConfirmingDelete) return;
+    setConfirmReservation(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmReservation?.id) return;
+    setIsConfirmingDelete(true);
+    setPendingDeleteId(confirmReservation.id);
     try {
       if (!onDeleteReservation) {
         throw new Error(t('reservationList.deleteError'));
       }
-      await onDeleteReservation?.(reservation.id);
+      await onDeleteReservation(confirmReservation.id);
       setToast({ type: 'success', message: t('reservationList.deleteSuccess') });
+      setConfirmReservation(null);
     } catch (error) {
       setToast({
         type: 'error',
         message: error.message || t('reservationList.deleteError'),
       });
     } finally {
+      setIsConfirmingDelete(false);
       setPendingDeleteId(null);
     }
   };
@@ -244,7 +260,7 @@ function ReservationList({
                 reservation={reservation}
                 onView={() => navigate(`/dashboard/detail/${reservation.id}`)}
                 onEdit={() => onEditReservation?.(reservation)}
-                onDelete={() => handleDelete(reservation)}
+                onDelete={() => requestDelete(reservation)}
                 disabled={pendingDeleteId === reservation.id}
               />
             </Box>
@@ -264,6 +280,27 @@ function ReservationList({
           </Alert>
         ) : null}
       </Snackbar>
+      <Dialog open={Boolean(confirmReservation)} onClose={closeDeleteDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>{t('reservationList.deleteConfirmTitle')}</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">
+            {t('reservationList.deleteConfirmMessage')}
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={closeDeleteDialog} disabled={isConfirmingDelete}>
+            {t('reservationList.cancel')}
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleConfirmDelete}
+            disabled={isConfirmingDelete}
+          >
+            {t('reservationList.confirm')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

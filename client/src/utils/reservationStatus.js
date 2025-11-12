@@ -3,18 +3,18 @@ export const DEFAULT_RESERVATION_STATUS = 'preliminary';
 export const RESERVATION_STATUS_META = {
   preliminary: {
     labelKey: 'reservationStatus.preliminary',
-    background: 'rgba(212, 152, 69, 0.15)',
-    color: '#C36F2B',
+    background: 'rgba(247, 200, 85, 0.35)',
+    color: '#AD6B00',
   },
   deposit_paid: {
     labelKey: 'reservationStatus.depositPaid',
-    background: 'rgba(92, 164, 117, 0.18)',
-    color: '#3D7A5A',
+    background: 'rgba(33, 111, 177, 0.35)',
+    color: '#0E406C',
   },
   confirmed: {
     labelKey: 'reservationStatus.confirmed',
-    background: 'rgba(31, 60, 74, 0.18)',
-    color: '#1F3C4A',
+    background: 'rgba(77, 171, 125, 0.35)',
+    color: '#1E5E3A',
   },
   booking: {
     labelKey: 'reservationStatus.booking',
