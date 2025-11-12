@@ -50,7 +50,12 @@ const ReservationCalendar = ({
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const weekdayLabels = useMemo(() => {
     const labels = t('calendar.weekdays');
-    return Array.isArray(labels) ? labels : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    if (Array.isArray(labels)) {
+      return labels;
+    }
+    return language === 'pl'
+      ? ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz']
+      : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   }, [t, language]);
 
   const daysInMonth = useMemo(() => {
@@ -420,8 +425,13 @@ const MonthlyCalendar = ({
   const resolvedRoomLabel = roomLabel || t('calendar.room');
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, paddingTop: 1 }}>
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        justifyContent="space-between"
+        alignItems={{ xs: 'flex-start', sm: 'center' }}
+        spacing={{ xs: 1.5, sm: 0 }}
+      >
         <Box display="flex" alignItems="center" gap={1}>
           <IconButton onClick={() => onNavigate('prev')} size="small">
             <ArrowBackIos fontSize="inherit" />
@@ -434,8 +444,26 @@ const MonthlyCalendar = ({
           </IconButton>
         </Box>
 
-        <FormControl size="small" sx={{ minWidth: 200 }}>
-          <InputLabel id="calendar-room-select">{resolvedRoomLabel}</InputLabel>
+        <FormControl
+          size="small"
+          fullWidth
+          sx={{
+            minWidth: { xs: 'auto', sm: 200 },
+            maxWidth: { xs: '70%', sm: 280 },
+            width: { xs: '100%', sm: 'auto' },
+            mt: { xs: 1, sm: 0 },
+            '& .MuiOutlinedInput-root': {
+              borderRadius: { xs: 3, sm: 10 },
+              fontSize: { xs: '0.95rem', sm: '1rem' },
+              '& .MuiSelect-select': {
+                py: { xs: 0.7, sm: 1 },
+              },
+            },
+          }}
+        >
+          <InputLabel id="calendar-room-select" shrink>
+            {resolvedRoomLabel}
+          </InputLabel>
           <Select
             labelId="calendar-room-select"
             value={room.id}
@@ -444,7 +472,7 @@ const MonthlyCalendar = ({
           >
             {rooms.map((item) => (
               <MenuItem key={item.id} value={item.id}>
-                {item.propertyName ? `${item.propertyName} — ${item.name}` : item.name}
+                {item.name}
               </MenuItem>
             ))}
           </Select>
@@ -512,9 +540,6 @@ const MobileDayCell = ({
   const hasReservation = Boolean(reservation);
   const label = format(day, 'd', { locale: dateLocale });
   const startDate = hasReservation ? safeParseDate(reservation.start_date) : null;
-  const endDate = hasReservation ? safeParseDate(reservation.end_date) : null;
-  const inclusiveEnd = startDate && endDate ? addDays(endDate, -1) : null;
-  const effectiveEnd = inclusiveEnd && startDate && inclusiveEnd >= startDate ? inclusiveEnd : startDate;
   const isStart = hasReservation && startDate && isSameDay(day, startDate);
   const statusMeta = reservation ? getReservationStatusMeta(reservation.status) : null;
   const blockColor = statusMeta?.background || '#235369';

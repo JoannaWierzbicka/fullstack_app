@@ -22,17 +22,18 @@ export default function Home() {
       }}
     >
       <Stack
-        direction={{ xs: 'column', lg: 'row' }}
-        spacing={{ xs: 5, lg: 8 }}
+        direction={{ xs: 'column', md: 'column', lg: 'row' }}
+        spacing={{ xs: 5, md: 6, lg: 8 }}
         sx={{ width: '100%', maxWidth: 1100 }}
-        alignItems={{ xs: 'stretch', lg: 'center' }}
+        alignItems={{ xs: 'stretch', md: 'center', lg: 'center' }}
       >
         <Box
           sx={{
-            maxWidth: { xs: '100%', sm: 520 },
-            textAlign: { xs: 'center', lg: 'left' },
-            mx: { xs: 'auto', lg: 0 },
+            maxWidth: { xs: '100%', sm: 520, md: 620, lg: 680 },
+            textAlign: { xs: 'center', md: 'center', lg: 'left' },
+            mx: { xs: 'auto', md: 'auto', lg: 0 },
             position: 'relative',
+            px: { xs: 1.5, sm: 0 },
           }}
         >
           <Typography
@@ -49,9 +50,13 @@ export default function Home() {
             variant="h1"
             component="h1"
             sx={{
-              fontSize: { xs: '2.5rem', sm: '3.25rem', lg: '3.75rem' },
-              lineHeight: 1.1,
+              fontSize: { xs: '2rem', sm: '3rem', lg: '3.75rem' },
+              letterSpacing: { xs: '0.08rem', sm: '0.12rem', lg: '0.18rem' },
+              lineHeight: { xs: 1.08, sm: 1.1 },
               mb: 2.5,
+              wordBreak: 'break-word',
+              mx: { xs: 'auto', lg: 0 },
+              maxWidth: { xs: '100%', sm: 560, lg: '100%' },
             }}
           >
             {t('home.heroTitle')}
@@ -71,7 +76,7 @@ export default function Home() {
             direction={{ xs: 'column', sm: 'row' }}
             spacing={2.5}
             sx={{ mt: 4, width: '100%' }}
-            justifyContent={{ xs: 'center', lg: 'flex-start' }}
+            justifyContent={{ xs: 'center', md: 'center', lg: 'flex-start' }}
             alignItems={{ xs: 'stretch', sm: 'center' }}
           >
             {isAuthenticated ? (
@@ -119,6 +124,8 @@ export default function Home() {
             alignItems: 'center',
             flex: 1,
             minHeight: { xs: 320, sm: 360, lg: 400 },
+            mt: { xs: 0, md: 0, lg: 0 },
+            mx: { xs: 'auto', md: 'auto', lg: 0 },
           }}
         >
           <Box

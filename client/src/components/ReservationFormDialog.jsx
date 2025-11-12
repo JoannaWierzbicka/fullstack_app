@@ -230,11 +230,6 @@ function ReservationFormDialog({
     }
   };
 
-  const timelineLabels =
-    language === 'pl'
-      ? ['Gość', 'Pobyt', 'Potwierdzenie']
-      : ['Guest', 'Stay', 'Confirmation'];
-
   return (
     <Dialog open onClose={onCancel} maxWidth="sm" fullWidth>
       <DialogTitle>{title}</DialogTitle>

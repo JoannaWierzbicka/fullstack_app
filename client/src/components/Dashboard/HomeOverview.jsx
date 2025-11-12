@@ -322,6 +322,7 @@ export default function HomeOverview() {
         direction={{ xs: 'column', md: 'row' }}
         alignItems={{ xs: 'stretch', md: 'center' }}
         spacing={{ xs: 2.5, md: 2 }}
+        sx={{ flexWrap: { md: 'wrap' }, rowGap: { md: 2 } }}
       >
         <Box sx={{ flexGrow: 1 }}>
           <Typography variant="h4" component="h1">
@@ -334,7 +335,11 @@ export default function HomeOverview() {
 
         <FormControl
           size="small"
-          sx={{ minWidth: { xs: '100%', md: 240 }, maxWidth: { xs: '100%', md: 260 } }}
+          sx={{
+            minWidth: { xs: '100%', sm: 260, md: 240 },
+            maxWidth: { xs: '100%', md: 260 },
+            mb: { xs: 1.5, md: 0 }
+          }}
           disabled={loadingProperties || properties.length === 0}
         >
           <InputLabel id="dashboard-property-select-label">
@@ -358,14 +363,6 @@ export default function HomeOverview() {
           </Select>
         </FormControl>
 
-        <Button
-          variant="outlined"
-          component={RouterLink}
-          to="/dashboard/settings"
-          sx={{ width: { xs: '100%', md: 'auto' } }}
-        >
-          {t('dashboard.manageProperties')}
-        </Button>
       </Stack>
 
       {propertiesError && <Alert severity="error">{propertiesError}</Alert>}
@@ -389,17 +386,25 @@ export default function HomeOverview() {
                   selectedProperty ? `— ${selectedProperty.name}` : ''
                 }`}
               </Typography>
-        <Button
-          variant="contained"
-          disabled={rooms.length === 0}
-          color="info"
-          onClick={() =>
-            openCreateDialog({
-              property_id: selectedPropertyId,
-              room_id: roomFilterId !== 'all' ? roomFilterId : undefined,
-            })
+              <Button
+                variant="contained"
+                disabled={rooms.length === 0}
+                color="info"
+                onClick={() =>
+                  openCreateDialog({
+                    property_id: selectedPropertyId,
+                    room_id: roomFilterId !== 'all' ? roomFilterId : undefined,
+                  })
                 }
-                sx={{ width: { xs: '100%', sm: 'auto' } }}
+                sx={{
+                  width: { xs: 'auto', sm: 'auto' },
+                  borderRadius: 999,
+                  px: { xs: 3.2, sm: 4 },
+                  py: { xs: 0.95, sm: 1.1 },
+                  letterSpacing: { xs: '0.16em', sm: '0.18em' },
+                  alignSelf: { xs: 'center', sm: 'flex-start' },
+                  mb: { xs: 3, sm: 0 },
+                }}
               >
                 {t('dashboard.addReservation')}
               </Button>
@@ -416,7 +421,7 @@ export default function HomeOverview() {
                     {roomsError || reservationsError}
                   </Alert>
                 )}
-                <Box sx={{ width: '100%', overflow: 'hidden' }}>
+                <Box sx={{ width: '100%', overflow: 'hidden', mt: { xs: 2, sm: 1.5 } }}>
                   <ReservationCalendar
                     rooms={roomsForCalendar}
                     reservations={reservations}

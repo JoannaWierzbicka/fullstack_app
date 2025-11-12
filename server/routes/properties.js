@@ -3,12 +3,10 @@ import { supabase } from '../auth/supabaseClient.js';
 import { requireAuth } from '../auth/requireAuth.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { createHttpError } from '../utils/httpError.js';
+import { mapSupabaseError } from '../utils/mapSupabaseError.js';
 import { validatePropertyPayload } from '../validators/propertyValidator.js';
 
 const router = Router();
-
-const mapSupabaseError = (error, fallbackStatus = 500) =>
-  createHttpError(error?.status || fallbackStatus, error?.message || 'Supabase error.');
 
 router.use(requireAuth);
 

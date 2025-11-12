@@ -80,7 +80,7 @@ function ReservationList({
     const items = [...reservationsFilteredByRoom];
     const sorter = sorters[sortBy] ?? sorters.date;
     return items.sort(sorter);
-  }, [reservationsFilteredByRoom, sortBy]);
+  }, [reservationsFilteredByRoom, sortBy, sorters]);
 
   const requestDelete = (reservation) => {
     if (!reservation?.id) return;
@@ -128,6 +128,16 @@ function ReservationList({
         mb={4}
         flexDirection={{ xs: 'column', md: 'row' }}
         gap={3}
+        sx={{
+          p: { xs: 2.4, sm: 3, md: 0 },
+          borderRadius: { xs: 5, md: 0 },
+          border: { xs: '1px solid rgba(195, 111, 43, 0.25)', md: 'none' },
+          backgroundColor: { xs: 'rgba(251, 247, 240, 0.95)', md: 'transparent' },
+          boxShadow: {
+            xs: '0 18px 40px rgba(25, 41, 49, 0.12)',
+            md: 'none',
+          },
+        }}
       >
         <Box sx={{ flexGrow: 1 }}>
           {showHeader && (
@@ -148,20 +158,39 @@ function ReservationList({
         <Box
           display="flex"
           flexDirection={{ xs: 'column', lg: 'row' }}
-          gap={2}
+          gap={{ xs: 1.5, lg: 2 }}
           alignItems={{ xs: 'stretch', lg: 'center' }}
           sx={{
             width: { xs: '100%', md: 'auto' },
-            backgroundColor: 'rgba(251, 247, 240, 0.85)',
-            borderRadius: 30,
-            border: '1px solid rgba(195, 111, 43, 0.35)',
-            boxShadow: '0 18px 40px rgba(25, 41, 49, 0.16)',
-            px: { xs: 2, md: 3 },
-            py: { xs: 2, md: 2.5 },
+            backgroundColor: { xs: 'transparent', sm: 'rgba(251, 247, 240, 0.92)' },
+            borderRadius: { xs: 2, sm: 24, md: 30 },
+            border: { xs: 'none', sm: '1px solid rgba(195, 111, 43, 0.3)' },
+            boxShadow: {
+              xs: 'none',
+              md: '0 18px 40px rgba(25, 41, 49, 0.16)',
+            },
+            px: { xs: 0, sm: 2.4, md: 3 },
+            py: { xs: 0, sm: 1.8, md: 2.5 },
           }}
         >
           {hasRoomFilter && (
-            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 200 } }}>
+            <FormControl
+              size="small"
+              fullWidth
+              sx={{
+                minWidth: { xs: '100%', sm: 200 },
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: { xs: 2, sm: 999 },
+                  fontSize: { xs: '0.95rem', sm: '1rem' },
+                  '& .MuiSelect-select': {
+                    py: { xs: 0.55, sm: 0.9 },
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  fontSize: { xs: '0.85rem', sm: '0.9rem' },
+                },
+              }}
+            >
               <InputLabel id="reservation-room-filter-label">
                 {t('reservationList.filterByRoom')}
               </InputLabel>
@@ -170,6 +199,7 @@ function ReservationList({
                 value={roomFilterId}
                 label={t('reservationList.filterByRoom')}
                 onChange={(event) => onRoomFilterChange?.(event.target.value)}
+                sx={{ borderRadius: { xs: 2, sm: 999 } }}
               >
                 <MenuItem value="all">{t('reservationList.allRooms')}</MenuItem>
                 {rooms.map((room) => (
@@ -181,13 +211,30 @@ function ReservationList({
             </FormControl>
           )}
 
-          <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 200 } }}>
+          <FormControl
+            size="small"
+            fullWidth
+            sx={{
+              minWidth: { xs: '100%', sm: 200 },
+              '& .MuiOutlinedInput-root': {
+                borderRadius: { xs: 2, sm: 999 },
+                fontSize: { xs: '0.95rem', sm: '1rem' },
+                '& .MuiSelect-select': {
+                  py: { xs: 0.55, sm: 0.9 },
+                },
+              },
+              '& .MuiInputLabel-root': {
+                fontSize: { xs: '0.85rem', sm: '0.9rem' },
+              },
+            }}
+          >
             <InputLabel id="reservation-sort-label">{t('reservationList.sortBy')}</InputLabel>
             <Select
               labelId="reservation-sort-label"
               value={sortBy}
               label={t('reservationList.sortBy')}
               onChange={(event) => setSortBy(event.target.value)}
+              sx={{ borderRadius: { xs: 2, sm: 999 } }}
             >
               {SORT_OPTIONS.map((option) => (
                 <MenuItem key={option.value} value={option.value}>
@@ -197,16 +244,6 @@ function ReservationList({
             </Select>
           </FormControl>
 
-          <Button
-            variant="contained"
-            color="info"
-            startIcon={<LocalPostOfficeIcon />}
-            onClick={() => onAddReservation?.()}
-            disabled={!canAdd || !onAddReservation}
-            sx={{ width: { xs: '100%', sm: 'auto' } }}
-          >
-            {t('reservationList.add')}
-          </Button>
         </Box>
       </Box>
 
@@ -218,18 +255,25 @@ function ReservationList({
             textAlign: 'center',
           }}
         >
-          <CardContent>
+          <CardContent sx={{ px: { xs: 3, sm: 5 }, py: { xs: 3, sm: 4 } }}>
             <Typography sx={{ mb: 2 }}>{t('reservationList.empty')}</Typography>
             <Typography variant="body2" color="text.secondary">
               {t('reservationList.addFirst')}
             </Typography>
           </CardContent>
-          <CardActions>
+          <CardActions sx={{ justifyContent: 'center', pb: { xs: 3, sm: 4 } }}>
             <Button
               variant="contained"
               color="info"
               onClick={() => onAddReservation?.()}
               disabled={!canAdd || !onAddReservation}
+              sx={{
+                borderRadius: 999,
+                px: { xs: 3, sm: 4 },
+                py: { xs: 0.9, sm: 1 },
+                fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                letterSpacing: { xs: '0.16em', sm: '0.18em' },
+              }}
             >
               {t('reservationList.addFirst')}
             </Button>
